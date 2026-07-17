@@ -1,0 +1,101 @@
+export const meta = { title: "Data Flow", order: 2 };
+
+# Data flow
+
+This page traces the full journey of a documentation page: from an `.mdx`
+file on disk, through discovery and routing, to pixels in the browser. It is
+intentionally long-form so you can watch the "On this page" panel track your
+scroll position.
+
+---
+
+## The discovery pipeline
+
+Everything starts in `src/lib/docs.ts`, which runs once at module load.
+
+### Globbing the filesystem
+
+Vite's `import.meta.glob` scans `docs/**/*.mdx` at build time. Two globs run
+over the same files: an eager one that reads each file's `meta` export for
+titles and ordering, and a lazy one whose loader functions feed
+`React.lazy` so page code is split per route.
+
+### Building the tree
+
+File paths are split into segments. Each folder segment becomes a branch
+node; each file becomes a leaf. An `index.mdx` attaches its metadata to the
+folder itself, which is how a branch gets a landing page. Nodes sort by
+`meta.order` first, then alphabetically.
+
+## From file path to route
+
+Routes mirror the filesystem exactly, so `docs/architecture/data-flow.mdx`
+serves at `/architecture/data-flow`.
+
+### Route generation
+
+`App.tsx` maps every discovered file to a `<Route>` whose element is a lazy
+component. Nothing is hardcoded — adding a file adds a route on the next
+reload.
+
+### The index convention
+
+An `index.mdx` maps to its folder's path rather than `/index`. The root
+redirect simply points at the first page of the sorted tree.
+
+## Rendering pipeline
+
+Once the router matches, rendering is a straight line.
+
+### Suspense and code splitting
+
+The matched lazy component suspends while its chunk loads. The layout stays
+mounted the whole time, so the sidebar and navbar never flicker between
+pages.
+
+### MDX to React
+
+Compiled MDX calls into the component registry provided by `MDXProvider`.
+A `##` heading becomes the styled `H2`, a fenced block becomes `CodeBlock`,
+and a pipe table becomes the bordered `Table` — with zero imports in the
+document itself.
+
+> The registry is the single place where markdown syntax meets visual design.
+> Change `H2` once and every page updates.
+
+## Theme propagation
+
+Dark mode is one boolean in one context.
+
+### The class strategy
+
+`ThemeProvider` holds the flag, seeds it from `prefers-color-scheme`, and
+toggles the `dark` class on `<html>`. Tailwind's `dark:` variants do the
+rest — no component subscribes to theme state directly.
+
+## Search filtering
+
+The sidebar search never touches the network.
+
+### Live tree filtering
+
+Each keystroke re-runs `filterTree`, a case-insensitive substring match on
+titles. A branch that matches keeps its whole subtree; a branch with matching
+descendants stays visible as the path to them, expanded automatically.
+
+## Scroll tracking
+
+The right-hand panel is driven by two browser observers.
+
+### Heading extraction
+
+After each route renders, a `MutationObserver` re-scans the content column
+for `h2` and `h3` elements. Their ids come from `rehype-slug`, so anchors are
+stable and shareable.
+
+### The scroll spy
+
+An `IntersectionObserver` watches every heading against the scrolling
+container. The first visible heading, in document order, is highlighted in
+blue. Clicking an entry calls `scrollIntoView` with smooth behavior — the
+observer then takes over and confirms the highlight.

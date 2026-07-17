@@ -1,0 +1,56 @@
+export const meta = { title: "API Reference", order: 3 };
+
+# API Reference
+
+The complete surface a doc author works with: one metadata export and a
+small library of MDX components. Everything else is automatic.
+
+---
+
+## Page metadata
+
+Every doc may export a `meta` constant. Both fields are optional.
+
+| Field   | Type     | Default                        | Purpose                          |
+| ------- | -------- | ------------------------------ | --------------------------------- |
+| `title` | `string` | Filename in Title Case         | Sidebar label and breadcrumb text |
+| `order` | `number` | Unordered (sorts alphabetically) | Position among siblings         |
+
+```js
+export const meta = { title: "Data Flow", order: 2 };
+```
+
+## Components
+
+Import custom components from `@/components/mdx/<Name>`. Standard markdown —
+headings, links, lists, tables, code fences, blockquotes — needs no imports.
+
+### Tabs
+
+| Prop    | Type     | Required | Notes                       |
+| ------- | -------- | -------- | ---------------------------- |
+| `label` | `string` | yes      | On each `<Tab>` child        |
+
+Arrow keys move between tabs; the panel below swaps instantly.
+
+### Callout
+
+| Prop   | Type                                          | Required | Notes                 |
+| ------ | --------------------------------------------- | -------- | ---------------------- |
+| `type` | `"info" \| "warning" \| "success" \| "danger"` | no       | Defaults to `"info"`  |
+
+Markdown blockquotes render as the `info` style automatically.
+
+### PieChart
+
+| Prop   | Type                               | Required | Notes                          |
+| ------ | ---------------------------------- | -------- | ------------------------------- |
+| `data` | `{ name: string; value: number }[]` | yes      | Rendered as a 320px-tall donut |
+
+### Card and CardGrid
+
+| Prop      | Type            | Required | Notes                              |
+| --------- | --------------- | -------- | ----------------------------------- |
+| `title`   | `string`        | yes      | Card heading                        |
+| `number`  | `number`        | no       | Step badge in the corner            |
+| `columns` | `2 \| 3 \| 4`   | no       | On `CardGrid`; defaults to `2`      |

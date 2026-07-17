@@ -1,0 +1,140 @@
+Build a documentation platform frontend from scratch. Follow every instruction below exactly.
+
+====================================================================
+1. TECH STACK & PROJECT SETUP (NO SCAFFOLDING BLOAT)
+====================================================================
+
+- Vite + React 18 + TypeScript + Tailwind CSS + MDX.
+- Do NOT use `npm create vite@latest` output. Hand-write a minimal project:
+  - package.json (only these deps: react, react-dom, react-router-dom, @mdx-js/rollup, @mdx-js/react, remark-gfm, rehype-slug, recharts, prism-react-renderer; dev deps: vite, @vitejs/plugin-react, typescript, @types/react, @types/react-dom, tailwindcss, postcss, autoprefixer)
+  - vite.config.ts — register the MDX plugin BEFORE the react plugin, with remark-gfm and rehype-slug enabled.
+  - tsconfig.json — strict mode on, path alias "@/*" -> "src/*".
+  - index.html — single root div, load Google Fonts: Poppins (500, 600, 700) and Inter (400, 500, 600).
+  - tailwind.config.ts, postcss.config.js, src/main.tsx, src/App.tsx.
+- No default Vite assets, no App.css, no logo SVGs, no boilerplate counter demo, no README fluff. Every file in the repo must exist for a reason.
+
+====================================================================
+2. FOLDER STRUCTURE (CONTRIBUTOR-FIRST)
+====================================================================
+
+Top-level `docs/` folder sits alongside `public/` and `src/`. This is the ONLY place contributors touch to add documentation.
+
+project/
+├── docs/                          <- all documentation lives here as .mdx
+│   ├── getting-started/
+│   │   ├── index.mdx
+│   │   └── installation.mdx
+│   ├── architecture/
+│   │   ├── index.mdx
+│   │   ├── data-flow.mdx
+│   │   └── deployment/
+│   │       └── kubernetes.mdx
+│   └── api-reference.mdx
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── layout/                <- Sidebar.tsx, Breadcrumb.tsx, OnThisPage.tsx, Layout.tsx, ThemeToggle.tsx, SearchBox.tsx
+│   │   └── mdx/                   <- one file per MDX component (see section 5)
+│   ├── lib/
+│   │   ├── docs.ts                <- doc discovery + tree building (see section 3)
+│   │   └── theme.ts               <- dark mode context
+│   ├── styles/global.css
+│   ├── App.tsx
+│   └── main.tsx
+└── ...
+
+Rule for contributors (state this in a short README): "To add a doc, drop an .mdx file into docs/. Folders become tree branches. index.mdx is the folder's landing page. Nothing else to configure."
+
+====================================================================
+3. DOC DISCOVERY & TREE BUILDING
+====================================================================
+
+- In src/lib/docs.ts use `import.meta.glob('/docs/**/*.mdx')` so docs are auto-discovered at build time. NO manual registry, NO hardcoded routes.
+- Each MDX file supports frontmatter exported as a const:
+    export const meta = { title: "Data Flow", order: 2 }
+  If meta.title is missing, derive title from the filename (kebab-case -> Title Case).
+- Build a recursive tree structure from file paths: folders = branches (arbitrary nesting depth, levels under levels), files = leaves. Sort by meta.order then alphabetically.
+- Routes mirror file paths: docs/architecture/data-flow.mdx -> /architecture/data-flow. index.mdx maps to the folder path itself.
+- React Router renders the matched MDX component lazily (React.lazy + Suspense).
+
+====================================================================
+4. LAYOUT — EXACT 3-COLUMN STRUCTURE
+====================================================================
+
+Full-height app, top navbar + 3 columns beneath.
+
+TOP NAVBAR (height 64px, white bg, subtle bottom border #e6e9ec):
+- Left: small logo mark + product name in Poppins 600.
+- Right: dark mode toggle button.
+
+COLUMN 1 — SIDEBAR (fixed width 320px, light gray bg #f8f9fa, right border, independently scrollable):
+- Search input pinned at top: light gray rounded input (#ececec bg), magnifier icon, placeholder "Search docs (Ctrl K to open)". Ctrl+K / Cmd+K focuses it. Search filters the tree live by title (case-insensitive substring match), auto-expanding branches that contain matches.
+- Below: recursive tree navigation. Branch nodes show a chevron (rotates 90deg when expanded), leaf nodes are plain links. Indent each nesting level by 16px. Active page: light gray pill background (#e4e7ea), 3px blue-orange left accent bar, font-weight 500. Hover: subtle bg change. Smooth expand/collapse.
+
+COLUMN 2 — CONTENT (flexible width, max-width 780px centered, white bg, padding ~48px):
+- Breadcrumb on top: "Documentation > Section > Page", segments separated by ">", parent segments as blue links (#3871dc), current page plain dark text.
+- Then the rendered MDX content.
+- Page header pattern like Grafana: h1 in Poppins 700 (34px), a lead paragraph, then a horizontal divider before the body.
+
+COLUMN 3 — ON THIS PAGE (fixed width 260px, independently scrollable, hidden below 1280px):
+- Heading "On this page" in Poppins 600 (15px).
+- Lists all h2 and h3 headings of the CURRENT page in order. h3 entries indented 12px under their h2. Extract headings after MDX render by querying the content container for h2/h3 (rehype-slug guarantees ids).
+- Entries are muted gray links (#6b7280); the section currently in the viewport is highlighted in blue (#3871dc) using an IntersectionObserver scroll-spy. Clicking smooth-scrolls to the heading.
+
+====================================================================
+5. MDX COMPONENTS (src/components/mdx/, one file each)
+====================================================================
+
+Wire all of these through MDXProvider so they work in every doc with zero imports where possible (standard markdown elements) and a single named import for custom ones.
+
+a) Typography overrides (mapped automatically to markdown syntax):
+   - h1/h2/h3/h4: Poppins, weights 700/600/600/600, sizes 34/26/20/17px, with top margins; h2 gets a subtle bottom border like Grafana section dividers. All receive ids from rehype-slug.
+   - p: Inter 16px, line-height 1.7, color #24292e (dark: #d6d9dc).
+   - a: blue #3871dc, underline on hover.
+   - ul/ol/li with comfortable spacing.
+
+b) <Table> + automatic markdown table styling: full-width, header row with light gray bg (Poppins 600 13px uppercase-ish feel like Grafana), row borders #e6e9ec, zebra-free, hover row highlight, rounded outer border.
+
+c) Code:
+   - Inline `code`: light gray bg chip, Inter/mono 14px, rounded 4px, subtle border.
+   - <CodeBlock> for fenced blocks: prism-react-renderer syntax highlighting, header bar showing the language label, copy-to-clipboard button with "Copied!" feedback, rounded 8px container, dark editor theme in both light and dark modes (like Grafana's code panels).
+
+d) <Tabs> / <Tab label="...">: horizontal tab bar, active tab has blue underline (2px #3871dc) and blue text, content panel below. Keyboard accessible (arrow keys switch tabs).
+
+e) <Callout type="info | warning | success | danger"> and blockquote: left accent bar (4px), tinted background, small icon, type-colored. Map plain markdown blockquotes to the info style.
+
+f) <PieChart data={[{ name, value }]} />: recharts pie with donut style, Grafana-ish palette (#3871dc, #ff8833, #22c55e, #a855f7, #ef4444), legend on the right, tooltip on hover, values as percentages. Must resize responsively (ResponsiveContainer, fixed height 320px).
+
+g) <Card title="..."> and <CardGrid columns={2}>: the numbered card grid from Grafana's landing page — white cards, 1px border #e6e9ec, rounded 8px, title in Poppins 600 16px, body in Inter 14px gray, slight shadow + border-color shift on hover. Used for overview/landing pages.
+
+====================================================================
+6. VISUAL DESIGN — MATCH GRAFANA DOCS EXACTLY
+====================================================================
+
+- Fonts: Poppins for ALL headings, logo, card titles, tree section labels. Inter for body, tree items, breadcrumbs, TOC, inputs. Never mix these roles.
+- Light mode palette: page bg #ffffff, sidebar bg #f8f9fa, borders #e6e9ec, body text #24292e, muted text #6b7280, link/accent blue #3871dc, orange accent #ff8833 (logo mark, small highlights), primary button blue with white text, rounded 8px.
+- Dark mode palette: page bg #111217, sidebar bg #16171d, borders #2c2f38, body text #d6d9dc, muted #9aa0a6, same blue/orange accents (slightly brightened: #5b8def).
+- Dark mode: class strategy ("dark" on <html>), toggle in navbar (sun/moon icon), persisted in-memory via React state + context ONLY (do NOT use localStorage), default follows prefers-color-scheme.
+- Overall feel: clean, airy, generous whitespace, thin borders, minimal shadows — enterprise documentation, not a marketing site.
+
+====================================================================
+7. SAMPLE DOCS (CREATE THESE 5, WITH REAL CONTENT)
+====================================================================
+
+Write meaningful multi-section content (not lorem ipsum), each demonstrating the components:
+
+1. docs/getting-started/index.mdx — landing page style like the screenshot: title + lead + divider + Overview section + a <CardGrid> of 4 numbered cards.
+2. docs/getting-started/installation.mdx — <Tabs> for npm/yarn/pnpm, <CodeBlock> snippets, a <Callout type="warning">.
+3. docs/architecture/index.mdx — overview with a markdown table and a <PieChart> of component distribution.
+4. docs/architecture/data-flow.mdx — long-form page with many h2/h3 sections (to exercise the On-This-Page scroll spy), blockquote, inline code.
+5. docs/architecture/deployment/kubernetes.mdx — third-level nesting to prove deep trees work; YAML <CodeBlock>, <Callout type="danger">, a table of resource limits.
+
+====================================================================
+8. CODE QUALITY EXPECTATIONS
+====================================================================
+
+- TypeScript strict, no `any`. Explicit prop interfaces for every component.
+- Small, single-purpose components; no file over ~150 lines.
+- Every component file starts with a 2-3 line comment explaining what it does and how a contributor extends it.
+- No state management library; React context only for theme.
+- The app must build with `npm install && npm run dev` with zero warnings and zero unused deps.

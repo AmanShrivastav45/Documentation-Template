@@ -1,0 +1,71 @@
+export const meta = { title: "Installation", order: 2 };
+
+import { Tabs, Tab } from "@/components/mdx/Tabs";
+import { Callout } from "@/components/mdx/Callout";
+
+# Installation
+
+Docroom is a static frontend — installing it means installing its Node
+dependencies and starting the Vite dev server. The whole setup takes under a
+minute on a warm network.
+
+---
+
+## Prerequisites
+
+You need Node.js 18 or newer and one of the three major package managers.
+Check your Node version first:
+
+```bash
+node --version
+```
+
+<Callout type="warning">
+  Node versions older than 18 will fail during `npm install` because Vite 5
+  requires the modern ESM loader. Upgrade Node before filing an issue.
+</Callout>
+
+## Install dependencies
+
+Pick your package manager:
+
+<Tabs>
+<Tab label="npm">
+
+```bash
+npm install
+npm run dev
+```
+
+</Tab>
+<Tab label="yarn">
+
+```bash
+yarn install
+yarn dev
+```
+
+</Tab>
+<Tab label="pnpm">
+
+```bash
+pnpm install
+pnpm dev
+```
+
+</Tab>
+</Tabs>
+
+The dev server prints a local URL (usually `http://localhost:5173`). Open it
+and you should see this documentation site running from your own machine.
+
+## Production build
+
+To produce an optimized static bundle in `dist/`:
+
+```bash
+npm run build
+```
+
+The build type-checks the project first, then emits hashed assets you can
+serve from any static host or CDN.

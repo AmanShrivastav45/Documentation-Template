@@ -1,0 +1,51 @@
+export const meta = { title: "Getting Started", order: 1 };
+
+import { Card } from "@/components/mdx/Card";
+import { CardGrid } from "@/components/mdx/CardGrid";
+
+# Getting started with Docroom
+
+Docroom is a lightweight documentation platform: drop MDX files into a folder
+and get a searchable, themeable docs site with navigation, breadcrumbs, and a
+table of contents — no configuration files, no build scripts to maintain.
+
+---
+
+## Overview
+
+Every page you are reading lives as a plain `.mdx` file inside the `docs/`
+folder at the root of the repository. At build time Docroom scans that folder,
+turns nested directories into the tree you see in the sidebar, and generates a
+route for every file. There is no registry to update and no sidebar config to
+keep in sync — the filesystem is the single source of truth.
+
+Because pages are MDX, they are ordinary markdown that can also render React
+components. Tables, code blocks, and links work out of the box; richer blocks
+like tabs, callouts, and charts are one import away.
+
+## Set up in four steps
+
+<CardGrid columns={2}>
+  <Card number={1} title="Install">
+    Clone the repository and run the install and dev commands. The site boots
+    on a local Vite server with hot reload.
+  </Card>
+  <Card number={2} title="Write your first page">
+    Create a new `.mdx` file anywhere under `docs/`. It appears in the sidebar
+    immediately — folders become collapsible branches.
+  </Card>
+  <Card number={3} title="Add metadata">
+    Export a `meta` object with a `title` and `order` to control how the page
+    is named and sorted. Skip it and sensible defaults apply.
+  </Card>
+  <Card number={4} title="Use rich components">
+    Import tabs, callouts, cards, or charts from the component library to turn
+    long prose into scannable, interactive pages.
+  </Card>
+</CardGrid>
+
+## Where to go next
+
+Head to [Installation](/getting-started/installation) for the exact commands,
+or jump into [Architecture](/architecture) to see how discovery, routing, and
+rendering fit together.

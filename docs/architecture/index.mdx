@@ -1,0 +1,57 @@
+export const meta = { title: "Architecture", order: 2 };
+
+import { PieChart } from "@/components/mdx/PieChart";
+
+# Architecture
+
+Docroom keeps its architecture deliberately small: a discovery layer that
+reads the filesystem, a thin routing layer, and a set of presentational
+components. This page maps the moving parts.
+
+---
+
+## Layers
+
+The codebase divides into five layers, each with a single responsibility:
+
+| Layer         | Location              | Responsibility                                      |
+| ------------- | --------------------- | --------------------------------------------------- |
+| Content       | `docs/`               | MDX pages written by contributors                    |
+| Discovery     | `src/lib/docs.ts`     | Glob the filesystem, build the nav tree and routes   |
+| Shell         | `src/components/layout` | Navbar, sidebar, breadcrumb, table of contents     |
+| MDX library   | `src/components/mdx`  | Typography, tables, code, tabs, callouts, charts     |
+| Theme         | `src/lib/theme.ts`    | Dark-mode context and the `dark` class on `<html>`   |
+
+No layer reaches around another: content never imports the shell, and the
+shell never knows which pages exist beyond what discovery reports.
+
+## Component distribution
+
+A rough breakdown of source files by layer shows how much of the platform is
+plain presentational code:
+
+<PieChart
+  data={[
+    { name: "MDX components", value: 9 },
+    { name: "Layout shell", value: 6 },
+    { name: "Docs content", value: 6 },
+    { name: "Config files", value: 6 },
+    { name: "Library code", value: 2 },
+  ]}
+/>
+
+## Design constraints
+
+Three constraints shape every decision in the codebase:
+
+- **Filesystem as source of truth.** If a page exists on disk, it exists in
+  the app. Deleting the file deletes the route and the nav entry.
+- **No global state library.** The only shared state is the theme, held in a
+  single React context.
+- **Small files.** Every component stays under roughly 150 lines so it can be
+  read in one sitting.
+
+Continue to [Data Flow](/architecture/data-flow) for a step-by-step trace of
+a request, or skip ahead to
+[Kubernetes deployment](/architecture/deployment/kubernetes) for production
+hosting.

@@ -1,0 +1,95 @@
+export const meta = { title: "Kubernetes", order: 1 };
+
+import { Callout } from "@/components/mdx/Callout";
+
+# Deploying to Kubernetes
+
+Docroom builds to static files, so a production deployment is an nginx
+container behind a Service. This page gives you a working manifest and the
+resource numbers to run it safely.
+
+---
+
+## Build the image
+
+A two-stage Dockerfile keeps the final image small: Node builds the bundle,
+nginx serves it. Build and tag the image, then push it to your registry
+before applying any manifests.
+
+```bash
+docker build -t registry.example.com/docroom:1.0.0 .
+docker push registry.example.com/docroom:1.0.0
+```
+
+## Deployment manifest
+
+The Deployment runs two replicas so a node drain never takes the docs
+offline:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docroom
+  labels:
+    app: docroom
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: docroom
+  template:
+    metadata:
+      labels:
+        app: docroom
+    spec:
+      containers:
+        - name: docroom
+          image: registry.example.com/docroom:1.0.0
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+```
+
+<Callout type="danger">
+  The app uses client-side routing. If nginx is not configured to fall back
+  to `index.html` for unknown paths, every deep link and every page refresh
+  will return a 404. Add `try_files $uri /index.html;` to your nginx config.
+</Callout>
+
+## Resource limits
+
+Static file serving is cheap. These numbers hold comfortably for a docs site
+with thousands of daily readers:
+
+| Resource | Request | Limit | Rationale                                   |
+| -------- | ------- | ----- | -------------------------------------------- |
+| CPU      | 50m     | 200m  | nginx serves cached files with minimal CPU    |
+| Memory   | 64Mi    | 128Mi | Static assets stream from disk, not memory    |
+| Replicas | 2       | —     | Survives single-node maintenance without downtime |
+
+## Expose the service
+
+Front the Deployment with a ClusterIP Service and your ingress of choice:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: docroom
+spec:
+  selector:
+    app: docroom
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+Point your Ingress or Gateway at port 80 of this Service and the docs are
+live.
