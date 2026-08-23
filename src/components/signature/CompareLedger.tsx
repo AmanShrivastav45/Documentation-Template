@@ -42,7 +42,7 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
         </h2>
       </div>
       <div className="flex flex-col min-[900px]:flex-row bg-canvas flex-1 min-h-0">
-        <div className="flex-1 min-w-0 min-[900px]:min-w-[340px] flex flex-col min-h-0 border-b min-[900px]:border-b-0 border-hairline-strong">
+        <div className="flex-1 min-w-0 min-[900px]:min-w-[340px] flex flex-col min-h-0 border-b min-[900px]:border-b-0 min-[900px]:border-r border-hairline-strong">
           <div className="h-8 shrink-0 sticky top-0 bg-surface flex items-center px-md text-mono-eyebrow uppercase tracking-wide text-stone font-mono font-mono-noliga">
             Model Rule
           </div>
@@ -66,7 +66,7 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
 
         <div
           ref={codeColumnRef}
-          className={`flex-1 min-w-0 min-[900px]:min-w-[340px] flex flex-col min-h-0 transition-colors duration-base ${
+          className={`flex-1 min-w-0 min-[900px]:min-w-[340px] min-[900px]:border-l border-hairline-strong flex flex-col min-h-0 transition-colors duration-base ${
             highlightedLocation ? "bg-code-evidence-bg" : ""
           }`}
         >
