@@ -86,6 +86,11 @@ export default {
         "mono-code": ["13px", { lineHeight: "1.65", letterSpacing: "0" }],
         "mono-code-sm": ["12px", { lineHeight: "1.6", letterSpacing: "0" }],
       },
+      transitionDuration: {
+        fast: "120ms",
+        base: "180ms",
+        slow: "260ms",
+      },
     },
   },
   plugins: [],
