@@ -4,6 +4,7 @@ import { useUpload } from "../../hooks/useUpload";
 import { useToast } from "../../context/ToastContext";
 import { SelectField } from "../../components/primitives/SelectField";
 import { FileDrop } from "../../components/signature/FileDrop";
+import { ApiClientError } from "../../api/client";
 
 const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt"];
 
@@ -26,18 +27,15 @@ export function UploadPanel({ onUploaded }: UploadPanelProps) {
       const result = await upload.run(file, activeDomain);
       showToast({ kind: "success", message: `${result.filename} uploaded to ${result.domain}.` });
       onUploaded();
-    } catch {
-      const detail = upload.error?.detail;
+    } catch (err) {
+      const detail = err instanceof ApiClientError ? err.detail : undefined;
+      const message = err instanceof ApiClientError ? err.message : "Upload failed";
       const allowedDomains =
         Array.isArray(detail) && detail[0]?.allowed_domains ? (detail[0].allowed_domains as string[]) : null;
       if (allowedDomains) {
         setDomainError(`Unsupported domain. Allowed: ${allowedDomains.join(", ")}`);
       }
-      showToast({
-        kind: "error",
-        message: upload.error?.message ?? "Upload failed",
-        detail: upload.error?.detail,
-      });
+      showToast({ kind: "error", message, detail });
     }
   }
 
