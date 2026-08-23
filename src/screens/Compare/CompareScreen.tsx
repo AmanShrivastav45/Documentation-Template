@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDomains } from "../../hooks/useDomains";
 import { useRuns } from "../../hooks/useRuns";
 import { useCompare } from "../../hooks/useCompare";
@@ -9,6 +9,12 @@ import { ControlBar } from "./ControlBar";
 import { SummaryStrip } from "./SummaryStrip";
 import { ProgressCompare } from "../../components/signature/ProgressCompare";
 import { EmptyState } from "../../components/signature/EmptyState";
+import { TriageList } from "../../components/signature/TriageList";
+import { CompareLedger } from "../../components/signature/CompareLedger";
+import { DiscrepancyStack } from "./DiscrepancyStack";
+import { useKeyboardTriage } from "./useKeyboardTriage";
+import { sortFacts } from "./sort";
+import { buildLedgerCode } from "./ledgerCode";
 
 export function CompareScreen() {
   const domainsQuery = useDomains();
@@ -17,6 +23,7 @@ export function CompareScreen() {
   const { setActiveRun } = useRun();
   const { showToast } = useToast();
   const state = useCompareState();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (domainsQuery.data && !state.domain) {
@@ -53,6 +60,39 @@ export function CompareScreen() {
       qualifiedName: v.qualified_name,
       verdict: v.verdict,
     })) ?? [];
+
+  const filtered =
+    compare.data?.verdicts.filter((v) => {
+      const matchesVerdict = state.verdictFilters.size === 0 || state.verdictFilters.has(v.verdict);
+      const q = state.searchValue.toLowerCase();
+      const matchesSearch =
+        q === "" || v.qualified_name.toLowerCase().includes(q) || v.fact_id.toLowerCase().includes(q);
+      return matchesVerdict && matchesSearch;
+    }) ?? [];
+  const visibleFacts = sortFacts(filtered);
+  const selectedFact = compare.data?.verdicts.find((v) => v.fact_id === state.selectedFactId) ?? null;
+
+  useKeyboardTriage({
+    onSetSingleFilter: state.setSingleVerdictFilter,
+    onClearFilters: () => {
+      state.clearVerdictFilters();
+      state.setSearchValue("");
+    },
+    onCopyFactId: () => {
+      if (state.selectedFactId) navigator.clipboard.writeText(state.selectedFactId);
+    },
+    searchInputRef,
+  });
+
+  useEffect(() => {
+    state.setHighlightedLocation(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.selectedFactId]);
+
+  function handleLocationClick(location: string) {
+    state.setHighlightedLocation(location);
+    setTimeout(() => state.setHighlightedLocation(null), 1600);
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -93,12 +133,42 @@ export function CompareScreen() {
         />
       ) : null}
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col min-[1024px]:flex-row">
         {!compare.data && compare.status !== "loading" && (
           <EmptyState
             title="No compare run yet"
             description="Select a domain and run above, then choose Compare to see verdicts."
           />
+        )}
+
+        {compare.data && (
+          <>
+            <TriageList
+              facts={visibleFacts}
+              selectedFactId={state.selectedFactId}
+              onSelectFact={state.setSelectedFactId}
+              searchValue={state.searchValue}
+              onSearchChange={state.setSearchValue}
+              searchInputRef={searchInputRef}
+            />
+            <div className="flex-1 min-h-0 flex flex-col overflow-auto">
+              {selectedFact ? (
+                <>
+                  <CompareLedger
+                    fact={selectedFact}
+                    code={buildLedgerCode(
+                      selectedFact,
+                      runsQuery.data?.runs.find((r) => r.run_id === state.runId)?.file_path ?? ""
+                    )}
+                    highlightedLocation={state.highlightedLocation}
+                  />
+                  <DiscrepancyStack fact={selectedFact} onLocationClick={handleLocationClick} />
+                </>
+              ) : (
+                <EmptyState title="No fact selected" description="Choose a row from the triage list on the left." />
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
