@@ -9,11 +9,27 @@ export const VERDICT_GLYPH: Record<Verdict, string> = {
 
 export const VERDICT_ORDER: Verdict[] = ["Misaligned", "Partial", "Unrelated", "Aligned"];
 
-export function verdictColorClass(verdict: Verdict): { text: string; tint: string; bar: string } {
-  const key = verdict.toLowerCase();
-  return {
-    text: `text-verdict-${key}`,
-    tint: `bg-verdict-${key}-tint`,
-    bar: `bg-verdict-${key}`,
-  };
+interface VerdictClassSet {
+  text: string;
+  tint: string;
+  bar: string;
+}
+
+const VERDICT_CLASSES: Record<Verdict, VerdictClassSet> = {
+  Aligned: { text: "text-verdict-aligned", tint: "bg-verdict-aligned-tint", bar: "bg-verdict-aligned" },
+  Partial: { text: "text-verdict-partial", tint: "bg-verdict-partial-tint", bar: "bg-verdict-partial" },
+  Misaligned: {
+    text: "text-verdict-misaligned",
+    tint: "bg-verdict-misaligned-tint",
+    bar: "bg-verdict-misaligned",
+  },
+  Unrelated: {
+    text: "text-verdict-unrelated",
+    tint: "bg-verdict-unrelated-tint",
+    bar: "bg-verdict-unrelated",
+  },
+};
+
+export function verdictColorClass(verdict: Verdict): VerdictClassSet {
+  return VERDICT_CLASSES[verdict];
 }
