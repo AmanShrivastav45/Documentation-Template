@@ -6,6 +6,7 @@ import { AppLayout } from "./layout/AppLayout";
 import { EmptyState } from "./components/signature/EmptyState";
 import { CompareScreen } from "./screens/Compare/CompareScreen";
 import { SourcesScreen } from "./screens/Sources/SourcesScreen";
+import { AskScreen } from "./screens/Ask/AskScreen";
 
 function StubScreen({ name }: { name: string }) {
   return (
@@ -25,7 +26,7 @@ export default function App() {
               <Route element={<AppLayout />}>
                 <Route index element={<CompareScreen />} />
                 <Route path="sources" element={<SourcesScreen />} />
-                <Route path="ask" element={<StubScreen name="Ask" />} />
+                <Route path="ask" element={<AskScreen />} />
                 <Route path="history" element={<StubScreen name="History" />} />
                 <Route path="settings" element={<StubScreen name="Settings" />} />
               </Route>

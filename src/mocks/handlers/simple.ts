@@ -4,6 +4,7 @@ import { documentsFixture } from "../fixtures/documents";
 import { codeRunsFixture } from "../fixtures/codeRuns";
 import { extractFixture } from "../fixtures/extract";
 import { ingestFixture } from "../fixtures/ingest";
+import { askFixture } from "../fixtures/ask";
 
 const BASE = import.meta.env.VITE_MVC_API_BASE_URL as string;
 
@@ -57,4 +58,8 @@ export const simpleHandlers = [
     return HttpResponse.json(extractFixture);
   }),
   http.post(`${BASE}/api/v1/code/ingest`, () => HttpResponse.json(ingestFixture)),
+  http.post(`${BASE}/api/v1/documents/query`, async ({ request }) => {
+    const body = (await request.json()) as { question: string };
+    return HttpResponse.json({ ...askFixture, question: body.question });
+  }),
 ];
