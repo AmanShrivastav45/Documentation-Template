@@ -24,6 +24,7 @@ export function CompareScreen() {
   const { showToast } = useToast();
   const state = useCompareState();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (domainsQuery.data && !state.domain) {
@@ -86,12 +87,22 @@ export function CompareScreen() {
 
   useEffect(() => {
     state.setHighlightedLocation(null);
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedFactId]);
 
   function handleLocationClick(location: string) {
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
     state.setHighlightedLocation(location);
-    setTimeout(() => state.setHighlightedLocation(null), 1600);
+    highlightTimeoutRef.current = setTimeout(() => {
+      state.setHighlightedLocation(null);
+      highlightTimeoutRef.current = null;
+    }, 1600);
   }
 
   return (
