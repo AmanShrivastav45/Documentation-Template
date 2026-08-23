@@ -8,6 +8,7 @@ export function useDocuments() {
     async_.run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const refresh = useCallback(() => async_.run(), [async_]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const refresh = useCallback(() => async_.run(), [async_.run]);
   return { ...async_, refresh };
 }
