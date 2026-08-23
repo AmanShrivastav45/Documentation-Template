@@ -9,7 +9,7 @@ interface TriageListProps {
   onSelectFact: (id: string) => void;
   searchValue: string;
   onSearchChange: (value: string) => void;
-  searchInputRef?: RefObject<HTMLInputElement>;
+  searchInputRef?: RefObject<HTMLInputElement | null>;
 }
 
 export function TriageList({

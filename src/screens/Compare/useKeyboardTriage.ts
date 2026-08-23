@@ -12,7 +12,7 @@ interface Params {
   onSetSingleFilter: (v: Verdict) => void;
   onClearFilters: () => void;
   onCopyFactId: () => void;
-  searchInputRef: RefObject<HTMLInputElement>;
+  searchInputRef: RefObject<HTMLInputElement | null>;
 }
 
 export function useKeyboardTriage({ onSetSingleFilter, onClearFilters, onCopyFactId, searchInputRef }: Params) {
