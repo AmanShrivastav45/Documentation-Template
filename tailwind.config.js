@@ -91,6 +91,12 @@ export default {
         base: "180ms",
         slow: "260ms",
       },
+      keyframes: {
+        "skeleton-pulse": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
+      },
+      animation: {
+        "skeleton-pulse": "skeleton-pulse 1.4s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
