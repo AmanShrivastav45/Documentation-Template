@@ -93,6 +93,10 @@ export default {
       },
       keyframes: {
         "skeleton-pulse": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
+        indeterminate: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(300%)" },
+        },
       },
       animation: {
         "skeleton-pulse": "skeleton-pulse 1.4s ease-in-out infinite",
