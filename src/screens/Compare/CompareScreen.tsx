@@ -16,6 +16,7 @@ import { DiscrepancyStack } from "./DiscrepancyStack";
 import { useKeyboardTriage } from "./useKeyboardTriage";
 import { sortFacts } from "./sort";
 import { buildLedgerCode } from "./ledgerCode";
+import { recordHistory } from "../../history/store";
 
 export function CompareScreen() {
   const domainsQuery = useDomains();
@@ -44,6 +45,7 @@ export function CompareScreen() {
         search_profile: state.searchProfile,
       });
       setActiveRun({ runId: result.run_id, domain: result.domain });
+      recordHistory(result, state.searchProfile, state.keyOnly);
       state.setControlBarCollapsed(true);
       state.clearVerdictFilters();
       state.setSelectedFactId(result.verdicts[0]?.fact_id ?? null);

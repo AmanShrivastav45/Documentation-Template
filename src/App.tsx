@@ -7,6 +7,7 @@ import { EmptyState } from "./components/signature/EmptyState";
 import { CompareScreen } from "./screens/Compare/CompareScreen";
 import { SourcesScreen } from "./screens/Sources/SourcesScreen";
 import { AskScreen } from "./screens/Ask/AskScreen";
+import { HistoryScreen } from "./screens/History/HistoryScreen";
 
 function StubScreen({ name }: { name: string }) {
   return (
@@ -27,7 +28,7 @@ export default function App() {
                 <Route index element={<CompareScreen />} />
                 <Route path="sources" element={<SourcesScreen />} />
                 <Route path="ask" element={<AskScreen />} />
-                <Route path="history" element={<StubScreen name="History" />} />
+                <Route path="history" element={<HistoryScreen />} />
                 <Route path="settings" element={<StubScreen name="Settings" />} />
               </Route>
             </Routes>
