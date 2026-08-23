@@ -4,3 +4,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans text-body-md;
+    transition: background-color 120ms ease-out, color 120ms ease-out;
+  }
+}
+
+.font-mono-noliga {
+  font-variant-ligatures: none;
+  font-feature-settings: "calt" 0, "liga" 0;
+}
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

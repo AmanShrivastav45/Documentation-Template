@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (function () {
+        var stored = localStorage.getItem("mvc.theme");
+        var mode = stored === "light" || stored === "dark" ? stored : "system";
+        var resolved =
+          mode === "system"
+            ? window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : mode;
+        document.documentElement.setAttribute("data-theme", resolved);
+      })();
+    </script>
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/roboto-400.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/fira-code-400.woff2" crossorigin />
     <title>mvc-gui</title>
   </head>
   <body>
