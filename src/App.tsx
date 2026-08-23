@@ -4,6 +4,7 @@ import { RunProvider } from "./context/RunContext";
 import { ToastProvider } from "./context/ToastContext";
 import { AppLayout } from "./layout/AppLayout";
 import { EmptyState } from "./components/signature/EmptyState";
+import { CompareScreen } from "./screens/Compare/CompareScreen";
 
 function StubScreen({ name }: { name: string }) {
   return (
@@ -21,7 +22,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route element={<AppLayout />}>
-                <Route index element={<StubScreen name="Compare" />} />
+                <Route index element={<CompareScreen />} />
                 <Route path="sources" element={<StubScreen name="Sources" />} />
                 <Route path="ask" element={<StubScreen name="Ask" />} />
                 <Route path="history" element={<StubScreen name="History" />} />

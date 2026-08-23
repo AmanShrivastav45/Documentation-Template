@@ -1,0 +1,106 @@
+import { useEffect } from "react";
+import { useDomains } from "../../hooks/useDomains";
+import { useRuns } from "../../hooks/useRuns";
+import { useCompare } from "../../hooks/useCompare";
+import { useRun } from "../../context/RunContext";
+import { useToast } from "../../context/ToastContext";
+import { useCompareState } from "./useCompareState";
+import { ControlBar } from "./ControlBar";
+import { SummaryStrip } from "./SummaryStrip";
+import { ProgressCompare } from "../../components/signature/ProgressCompare";
+import { EmptyState } from "../../components/signature/EmptyState";
+
+export function CompareScreen() {
+  const domainsQuery = useDomains();
+  const runsQuery = useRuns();
+  const compare = useCompare();
+  const { setActiveRun } = useRun();
+  const { showToast } = useToast();
+  const state = useCompareState();
+
+  useEffect(() => {
+    if (domainsQuery.data && !state.domain) {
+      state.setDomain(domainsQuery.data.default_domain);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [domainsQuery.data]);
+
+  async function handleCompare() {
+    try {
+      const result = await compare.run({
+        run_id: state.runId,
+        domain: state.domain,
+        fact_ids: state.factIds,
+        key_only: state.keyOnly,
+        search_profile: state.searchProfile,
+      });
+      setActiveRun({ runId: result.run_id, domain: result.domain });
+      state.setControlBarCollapsed(true);
+      state.clearVerdictFilters();
+      state.setSelectedFactId(result.verdicts[0]?.fact_id ?? null);
+    } catch {
+      showToast({
+        kind: "error",
+        message: compare.error?.message ?? "Compare failed",
+        detail: compare.error?.detail,
+      });
+    }
+  }
+
+  const factOptions =
+    compare.data?.verdicts.map((v) => ({
+      factId: v.fact_id,
+      qualifiedName: v.qualified_name,
+      verdict: v.verdict,
+    })) ?? [];
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <ControlBar
+        domains={domainsQuery.data?.domains ?? []}
+        domain={state.domain}
+        onDomainChange={state.setDomain}
+        runs={runsQuery.data?.runs ?? []}
+        runId={state.runId}
+        onRunIdChange={state.setRunId}
+        keyOnly={state.keyOnly}
+        onKeyOnlyChange={state.setKeyOnly}
+        searchProfile={state.searchProfile}
+        onSearchProfileChange={state.setSearchProfile}
+        factOptions={factOptions}
+        factIds={state.factIds}
+        onFactIdsChange={state.setFactIds}
+        onCompare={handleCompare}
+        comparing={compare.status === "loading"}
+        collapsed={state.controlBarCollapsed}
+        onEdit={() => state.setControlBarCollapsed(false)}
+      />
+
+      {compare.status === "loading" ? (
+        <div className="p-lg">
+          <ProgressCompare
+            factsTotal={runsQuery.data?.runs.find((r) => r.run_id === state.runId)?.facts_total ?? 0}
+            domain={state.domain}
+            profile={state.searchProfile}
+          />
+        </div>
+      ) : compare.data ? (
+        <SummaryStrip
+          summary={compare.data.summary}
+          activeFilters={state.verdictFilters}
+          onToggleFilter={state.toggleVerdictFilter}
+          onClearFilters={state.clearVerdictFilters}
+        />
+      ) : null}
+
+      <div className="flex-1 min-h-0">
+        {!compare.data && compare.status !== "loading" && (
+          <EmptyState
+            title="No compare run yet"
+            description="Select a domain and run above, then choose Compare to see verdicts."
+          />
+        )}
+      </div>
+    </div>
+  );
+}
