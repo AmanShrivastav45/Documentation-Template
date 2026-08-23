@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ApiClientError } from "../../api/client";
 import { useDomains } from "../../hooks/useDomains";
 import { useRuns } from "../../hooks/useRuns";
 import { useCompare } from "../../hooks/useCompare";
@@ -46,11 +47,11 @@ export function CompareScreen() {
       state.setControlBarCollapsed(true);
       state.clearVerdictFilters();
       state.setSelectedFactId(result.verdicts[0]?.fact_id ?? null);
-    } catch {
+    } catch (err) {
       showToast({
         kind: "error",
-        message: compare.error?.message ?? "Compare failed",
-        detail: compare.error?.detail,
+        message: err instanceof ApiClientError ? err.message : "Compare failed",
+        detail: err instanceof ApiClientError ? err.detail : undefined,
       });
     }
   }
