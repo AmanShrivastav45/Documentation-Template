@@ -12,12 +12,12 @@
 
 These apply to every task below; do not repeat them per-task.
 
-- **Never hard-code a hex value or magic spacing/radius number outside `src/styles/tokens.css`.** Every color, spacing, radius, and font value in component code must be a Tailwind class that resolves to a token (e.g. `bg-canvas`, `rounded-md`, `p-lg`), never an inline style or arbitrary Tailwind value like `bg-[#fff]`.
+- **Never hard-code a hex value or magic spacing/radius number outside `src/styles/tokens.css`.** Every color, spacing, radius, and font value in component code must be a Tailwind class that resolves to a token (e.g. `bg-canvas`, `rounded-md`, `p-lg`), never an inline style or arbitrary Tailwind value like `bg-[#fff]`. **Exception, explicitly carved out — not a violation to flag:** DESIGN.md itself specifies a handful of one-off literal pixel dimensions for specific components that are not multiples of the spacing scale and were never meant to be tokenized (topbar `h-[52px]`, sidebar rail `w-[72px]`, stat-card `h-[88px]`, confidence-meter track `h-[3px]`, toast/empty-state `max-w-[380px]`, and similar). These appear verbatim in multiple task briefs as arbitrary Tailwind bracket values by design, matching DESIGN.md's own literal numbers. This constraint is about *colors* and *spacing/radius choices that should have come from the scale but didn't* — not about every literal pixel dimension in the design system. Do not re-flag these specific, brief-mandated arbitrary values in review; the constraint remains fully in force for any *new* literal hex color or an *invented* spacing/radius number not already sanctioned by a task's exact prescribed code.
 - **Reference DESIGN.md tokens by name.** When a task's implementation corresponds to a `{component.x}` or `{colors.x}` entry in DESIGN.md, the code must use that exact name (in kebab-case) as the CSS variable / Tailwind key / component filename. Do not invent parallel names.
 - **Ligatures are disabled on all evidence/code/ID text.** Any element rendering `fact_id`, `run_id`, operators, or source code must carry the `font-mono-noliga` utility (defined in Task 3) or equivalent explicit `font-variant-ligatures: none`.
 - **Machine-emitted values are Fira Code; human-authored text is Roboto.** Never swap these per DESIGN.md's Typography section.
 - **Verdict colour means verdict, nothing else.** `{colors.accent}` (blue) is reserved for selection, focus, and links — never used to imply a result.
-- **No automated tests.** Each task's verification step is `npx tsc --noEmit`, `npx eslint <changed files>`, and a manual check via `npm run dev` — never a test-runner invocation.
+- **No automated tests.** Each task's verification step is `npm run build` (which runs `tsc -b && vite build`), `npx eslint <changed files>`, and a manual check via `npm run dev` — never a test-runner invocation. **Do not substitute `npx tsc --noEmit` or `npx vite build` alone for the type-check.** This project's root `tsconfig.json` is solution-style (`"files": []`, only `references` to `tsconfig.app.json`/`tsconfig.node.json`), so a bare `tsc --noEmit` at the root silently checks nothing and exits 0 even with real type errors present — confirmed by injecting a deliberate type error and observing `tsc --noEmit` exit 0 while `npm run build`'s `tsc -b` correctly reported it. `vite build` alone also does not type-check (esbuild/SWC strip types without validating them). `npm run build`'s `tsc -b` is the only command in this project that actually performs full type-checking.
 - **Commit after every task**, using `git add <exact files>` (never `git add -A`).
 - **TypeScript strict**, no `any` in new code. Use the interfaces defined in Task 4 (`src/types/domain.ts`) everywhere a payload shape is needed — do not redeclare them locally in a component or hook.
 - Node/npm commands are run from the repo root: `c:\Users\ammys\OneDrive\Desktop\mvc-gui`.
@@ -81,9 +81,9 @@ tailwind.config.js
 Run:
 ```bash
 npm install react-router
-npm install -D tailwindcss postcss autoprefixer msw
+npm install -D "tailwindcss@^3" postcss autoprefixer msw
 ```
-Expected: all four packages added to `package.json` (react-router under `dependencies`; the rest under `devDependencies`).
+Expected: all four packages added to `package.json` (react-router under `dependencies`; the rest under `devDependencies`). **Pin `tailwindcss` to the `3.x` line explicitly** — every later task's `tailwind.config.js` uses the v3 JS-based config API (`theme.extend`, the array-form `darkMode` selector), and `src/index.css` uses the v3 `@tailwind base/components/utilities` directives. An unpinned install resolves to Tailwind v4, whose PostCSS plugin moved to a separate `@tailwindcss/postcss` package and rejects the v3 directives outright — it throws the moment any CSS imports `src/index.css`, which is not caught by a bare `npm run dev` boot check (Vite transforms CSS lazily, on first request). Step 5 below verifies the CSS pipeline actually runs, not just that the dev server process starts, specifically to catch this.
 
 - [ ] **Step 2: Initialize Tailwind config**
 
@@ -129,10 +129,10 @@ npx msw init public/ --save
 ```
 Expected: `public/mockServiceWorker.js` is created and `package.json` gains a `"msw": { "workerDirectory": ["public"] }` entry. This file must be committed (it is required at runtime, not a build artifact) — do not add it to `.gitignore`.
 
-- [ ] **Step 5: Verify the dev server starts**
+- [ ] **Step 5: Verify the dev server starts and the CSS pipeline actually compiles**
 
 Run: `npm run dev`
-Expected: Vite starts without errors on `http://localhost:5173`. Stop the server (Ctrl+C) after confirming.
+Expected: Vite starts without errors on `http://localhost:5173`. A bare process boot is not sufficient — Vite transforms CSS lazily on first request, so a broken PostCSS/Tailwind pipeline will not surface until something actually requests `src/index.css`. Run `npx vite build` instead (or in addition): a production build forces every module, including `src/index.css` (imported from `src/main.tsx`), through the full PostCSS/Tailwind transform, so any PostCSS plugin failure surfaces as a build error. Expected: `vite build` exits 0. Stop the dev server (Ctrl+C) if you ran it.
 
 - [ ] **Step 6: Typecheck and lint**
 
@@ -1550,7 +1550,7 @@ function makeFact(index: number, verdict: Verdict): FactVerdict {
 
 const generatedFacts: FactVerdict[] = [];
 const verdictCycle: Verdict[] = ["Aligned", "Aligned", "Partial", "Misaligned", "Unrelated"];
-for (let i = 1; i <= 33; i += 1) {
+for (let i = 1; i <= 37; i += 1) {
   if ([7, 21, 30, 35].includes(i)) continue;
   generatedFacts.push(makeFact(i, verdictCycle[i % verdictCycle.length]));
 }
@@ -1786,6 +1786,8 @@ export function useDomains() {
 }
 ```
 
+`useAsync` returns a new `{...state, run}` object on every render (Step 1), so a `refresh` callback depending on that whole object (`[async_]`) would never actually memoize — `async_.run` itself is the one field on it guaranteed stable across renders (it's built with an empty-deps `useCallback` in Step 1), so `refresh` must depend on `[async_.run]`, not `[async_]`.
+
 Create `src/hooks/useRuns.ts`:
 ```typescript
 import { useCallback, useEffect } from "react";
@@ -1798,7 +1800,7 @@ export function useRuns() {
     async_.run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const refresh = useCallback(() => async_.run(), [async_]);
+  const refresh = useCallback(() => async_.run(), [async_.run]);
   return { ...async_, refresh };
 }
 ```
@@ -1815,7 +1817,7 @@ export function useDocuments() {
     async_.run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const refresh = useCallback(() => async_.run(), [async_]);
+  const refresh = useCallback(() => async_.run(), [async_.run]);
   return { ...async_, refresh };
 }
 ```
@@ -2400,15 +2402,33 @@ export const VERDICT_GLYPH: Record<Verdict, string> = {
 
 export const VERDICT_ORDER: Verdict[] = ["Misaligned", "Partial", "Unrelated", "Aligned"];
 
-export function verdictColorClass(verdict: Verdict): { text: string; tint: string; bar: string } {
-  const key = verdict.toLowerCase();
-  return {
-    text: `text-verdict-${key}`,
-    tint: `bg-verdict-${key}-tint`,
-    bar: `bg-verdict-${key}`,
-  };
+interface VerdictClassSet {
+  text: string;
+  tint: string;
+  bar: string;
+}
+
+const VERDICT_CLASSES: Record<Verdict, VerdictClassSet> = {
+  Aligned: { text: "text-verdict-aligned", tint: "bg-verdict-aligned-tint", bar: "bg-verdict-aligned" },
+  Partial: { text: "text-verdict-partial", tint: "bg-verdict-partial-tint", bar: "bg-verdict-partial" },
+  Misaligned: {
+    text: "text-verdict-misaligned",
+    tint: "bg-verdict-misaligned-tint",
+    bar: "bg-verdict-misaligned",
+  },
+  Unrelated: {
+    text: "text-verdict-unrelated",
+    tint: "bg-verdict-unrelated-tint",
+    bar: "bg-verdict-unrelated",
+  },
+};
+
+export function verdictColorClass(verdict: Verdict): VerdictClassSet {
+  return VERDICT_CLASSES[verdict];
 }
 ```
+
+This replaces the original `` `bg-verdict-${key}-tint` ``-style string interpolation, which has a real bug: Tailwind's build-time content scanner only generates CSS for class names that appear as complete literal strings somewhere in the source. `bg-verdict-unrelated-tint` never appears as a literal string anywhere else in the codebase (unlike the other three verdicts' tints, which happen to also appear literally in `StatusChip.tsx`), so it was silently dropped from the production build — the "Unrelated" verdict's tint background rendered as nothing everywhere `verdictColorClass` is used (`StatCard`, `TriageRow`, `VerdictChip`, `VerdictSpine`, `CodeBlock`'s evidence highlight, `DiscrepancyItem`). The static `VERDICT_CLASSES` record above is the same fix pattern already used correctly elsewhere in this plan (`ACTIVE_BORDER` in Task 16, `EVIDENCE_BORDER` in Task 17) — every class name Tailwind must generate now appears as a complete literal string in the source.
 
 - [ ] **Step 2: Verdict chip**
 
@@ -3359,7 +3379,7 @@ import { VerdictSpine } from "./VerdictSpine";
 import { MetaBadge } from "../primitives/MetaBadge";
 import type { FactVerdict } from "../../types/domain";
 
-interface LedgerCode {
+export interface LedgerCode {
   snippet: string;
   startLine: number;
   endLine: number;
@@ -3392,12 +3412,12 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
       className="flex flex-col min-h-0"
     >
       <div className="px-lg pt-lg pb-md border-b border-hairline">
-        <h2 className="text-title-lg text-ink font-mono font-mono-noliga font-medium truncate">
+        <h2 className="text-title-lg text-ink font-mono font-mono-noliga font-medium break-words">
           {fact.qualified_name}
         </h2>
       </div>
       <div className="flex flex-col min-[900px]:flex-row bg-canvas flex-1 min-h-0">
-        <div className="flex-1 min-w-0 min-[900px]:min-w-[340px] flex flex-col min-h-0 border-b min-[900px]:border-b-0 border-hairline-strong">
+        <div className="flex-1 min-w-0 min-[900px]:min-w-[340px] flex flex-col min-h-0 border-b min-[900px]:border-b-0 min-[900px]:border-r border-hairline-strong">
           <div className="h-8 shrink-0 sticky top-0 bg-surface flex items-center px-md text-mono-eyebrow uppercase tracking-wide text-stone font-mono font-mono-noliga">
             Model Rule
           </div>
@@ -3421,7 +3441,7 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
 
         <div
           ref={codeColumnRef}
-          className={`flex-1 min-w-0 min-[900px]:min-w-[340px] flex flex-col min-h-0 transition-colors duration-base ${
+          className={`flex-1 min-w-0 min-[900px]:min-w-[340px] min-[900px]:border-l border-hairline-strong flex flex-col min-h-0 transition-colors duration-base ${
             highlightedLocation ? "bg-code-evidence-bg" : ""
           }`}
         >
@@ -3451,6 +3471,8 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
 }
 ```
 
+The left column's `min-[900px]:border-r` and the right column's `min-[900px]:border-l` (both `border-hairline-strong`) implement DESIGN.md's "both flanking columns are `{colors.canvas}` with a `{colors.hairline-strong}` inner edge against the spine channel" at desktop widths — below 900px the spine itself becomes a horizontal band between the stacked columns, so the mobile `border-b` already visually separates them without needing this rule too.
+
 `highlightedLocation` is a best-effort implementation of DESIGN.md's "clicking `code_location` scrolls the code panel to the matching region and applies `{colors.code-evidence-bg}`" rule. `frontend.md`'s `CompareResponse.verdicts[]` does not carry per-discrepancy line numbers (only a free-text `code_location` string) — the same documented gap noted in Task 23 — so an exact line-level scroll target isn't derivable from the API contract as specified. This implementation scrolls the whole code column into view and washes it in the evidence tint as an honest approximation, rather than fabricating a line number. If the compare endpoint is later extended with per-discrepancy line ranges, tighten this to scroll/highlight only those lines the same way `evidenceLines` already does for the overall fact.
 
 - [ ] **Step 3: Typecheck and lint**
@@ -3474,7 +3496,7 @@ git commit -m "feat: add verdict-spine and compare-ledger signature components"
 
 **Interfaces:**
 - Consumes: `VERDICT_GLYPH`, `verdictColorClass`, `VERDICT_ORDER` (Task 13), `ConfidenceMeter` (Task 13), `FactVerdict` type.
-- Produces: `TriageRow`, `TriageList` (props: `facts: FactVerdict[]`, `selectedFactId: string | null`, `onSelectFact: (id: string) => void`, `searchValue: string`, `onSearchChange: (v: string) => void`, `searchInputRef?: React.RefObject<HTMLInputElement>`) — consumed by the Compare screen (Task 23), which owns verdict-filter and sort state and passes in the already-sorted/filtered `facts` array per DESIGN.md's *Sort contract*.
+- Produces: `TriageRow`, `TriageList` (props: `facts: FactVerdict[]`, `selectedFactId: string | null`, `onSelectFact: (id: string) => void`, `searchValue: string`, `onSearchChange: (v: string) => void`, `searchInputRef?: React.RefObject<HTMLInputElement | null>`) — consumed by the Compare screen (Task 23), which owns verdict-filter and sort state and passes in the already-sorted/filtered `facts` array per DESIGN.md's *Sort contract*. Note the `| null` in the ref type: `useRef<HTMLInputElement>(null)` resolves to `RefObject<HTMLInputElement | null>` under React 19's type overloads, not the bare `RefObject<HTMLInputElement>` — get this right the first time, since a solution-style root `tsconfig.json` (see Global Constraints) means a bare `npx tsc --noEmit` will NOT catch this mismatch; only `npm run build`'s `tsc -b` will.
 
 - [ ] **Step 1: TriageRow**
 
@@ -3533,7 +3555,7 @@ interface TriageListProps {
   onSelectFact: (id: string) => void;
   searchValue: string;
   onSearchChange: (value: string) => void;
-  searchInputRef?: RefObject<HTMLInputElement>;
+  searchInputRef?: RefObject<HTMLInputElement | null>;
 }
 
 export function TriageList({
@@ -3578,7 +3600,7 @@ export function TriageList({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Filter by fact_id or qualified_name"
           aria-label="Filter triage list"
-          className="flex-1 min-w-0 bg-transparent text-body-sm placeholder:text-faint focus:outline-none"
+          className="flex-1 min-w-0 bg-transparent text-body-sm placeholder:text-faint focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         />
         <span className="font-mono font-mono-noliga text-mono-id text-stone">{facts.length}</span>
       </div>
@@ -3588,7 +3610,7 @@ export function TriageList({
         aria-activedescendant={selectedFactId ? `triage-row-${selectedFactId}` : undefined}
         tabIndex={0}
         onKeyDown={onListKeyDown}
-        className="flex-1 overflow-auto focus:outline-none"
+        className="flex-1 overflow-auto focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {facts.map((fact) => (
           <TriageRow
@@ -4103,6 +4125,7 @@ import { useEffect } from "react";
 import { useDomains } from "../../hooks/useDomains";
 import { useRuns } from "../../hooks/useRuns";
 import { useCompare } from "../../hooks/useCompare";
+import { ApiClientError } from "../../api/client";
 import { useRun } from "../../context/RunContext";
 import { useToast } from "../../context/ToastContext";
 import { useCompareState } from "./useCompareState";
@@ -4139,11 +4162,11 @@ export function CompareScreen() {
       state.setControlBarCollapsed(true);
       state.clearVerdictFilters();
       state.setSelectedFactId(result.verdicts[0]?.fact_id ?? null);
-    } catch {
+    } catch (err) {
       showToast({
         kind: "error",
-        message: compare.error?.message ?? "Compare failed",
-        detail: compare.error?.detail,
+        message: err instanceof ApiClientError ? err.message : "Compare failed",
+        detail: err instanceof ApiClientError ? err.detail : undefined,
       });
     }
   }
@@ -4244,13 +4267,35 @@ git commit -m "feat: add Compare screen control bar, summary strip, and state wi
 
 **Files:**
 - Modify: `src/screens/Compare/CompareScreen.tsx`
-- Create: `src/screens/Compare/DiscrepancyStack.tsx`, `src/screens/Compare/useKeyboardTriage.ts`
+- Create: `src/screens/Compare/DiscrepancyStack.tsx`, `src/screens/Compare/useKeyboardTriage.ts`, `src/screens/Compare/ledgerCode.ts`
 
 **Interfaces:**
-- Consumes: `TriageList` (Task 20), `CompareLedger` (Task 19), `DiscrepancyItem` (Task 18), `sortFacts` (Task 22), all of `useCompareState`'s returned setters (Task 22).
-- Produces: a fully assembled Compare screen; `useKeyboardTriage` (a hook wiring the global keys `1`-`4`, `0`, `/`, `Esc`, `c` — `j`/`k`/`Enter` already live inside `TriageList` from Task 20).
+- Consumes: `TriageList` (Task 20), `CompareLedger`/`LedgerCode` (Task 19), `DiscrepancyItem` (Task 18), `sortFacts` (Task 22), all of `useCompareState`'s returned setters (Task 22).
+- Produces: a fully assembled Compare screen; `useKeyboardTriage` (a hook wiring the global keys `1`-`4`, `0`, `/`, `Esc`, `c` — `j`/`k`/`Enter` already live inside `TriageList` from Task 20); `buildLedgerCode(fact, filePath): LedgerCode` — the single place that derives `CompareLedger`'s `code` prop from a `FactVerdict` (see Task 19's note on the missing `evidence.code_snippet` field). Task 27's `HistoryScreen` imports this instead of re-deriving the same fallback logic.
 
-- [ ] **Step 1: Discrepancy stack**
+- [ ] **Step 1: Shared Ledger code-prop builder**
+
+`frontend.md`'s `CompareResponse.verdicts[]` has no `evidence.code_snippet`/`start_line`/`end_line` (only `fact_id`, `qualified_name`, `fact_type`, and free-text `code_location` strings inside `discrepancies[]`) — see Task 19's note on `CompareLedger`. Both this screen and Task 27's `HistoryScreen` need to build a `LedgerCode` from that same limited data; factor it out once here rather than duplicating the fallback logic in both places.
+
+Create `src/screens/Compare/ledgerCode.ts`:
+```typescript
+import type { FactVerdict } from "../../types/domain";
+import type { LedgerCode } from "../../components/signature/CompareLedger";
+
+export function buildLedgerCode(fact: FactVerdict, filePath: string): LedgerCode {
+  return {
+    snippet: fact.discrepancies[0]?.code_location ?? fact.reasoning,
+    startLine: 1,
+    endLine: 1,
+    qualifiedName: fact.qualified_name,
+    language: "python",
+    filePath,
+    factType: fact.fact_type,
+  };
+}
+```
+
+- [ ] **Step 2: Discrepancy stack**
 
 Create `src/screens/Compare/DiscrepancyStack.tsx`:
 ```typescript
@@ -4275,7 +4320,7 @@ export function DiscrepancyStack({ fact, onLocationClick }: DiscrepancyStackProp
 }
 ```
 
-- [ ] **Step 2: Global keyboard triage hook**
+- [ ] **Step 3: Global keyboard triage hook**
 
 Create `src/screens/Compare/useKeyboardTriage.ts`:
 ```typescript
@@ -4293,7 +4338,7 @@ interface Params {
   onSetSingleFilter: (v: Verdict) => void;
   onClearFilters: () => void;
   onCopyFactId: () => void;
-  searchInputRef: RefObject<HTMLInputElement>;
+  searchInputRef: RefObject<HTMLInputElement | null>;
 }
 
 export function useKeyboardTriage({ onSetSingleFilter, onClearFilters, onCopyFactId, searchInputRef }: Params) {
@@ -4327,7 +4372,7 @@ export function useKeyboardTriage({ onSetSingleFilter, onClearFilters, onCopyFac
 }
 ```
 
-- [ ] **Step 3: Assemble the full screen**
+- [ ] **Step 4: Assemble the full screen**
 
 Replace `src/screens/Compare/CompareScreen.tsx` — add the imports, the derived `visibleFacts`/`selectedFact` values, the `TriageList` + `CompareLedger` + `DiscrepancyStack` layout, and the keyboard hook, on top of everything Task 22 already wrote:
 ```typescript
@@ -4335,6 +4380,7 @@ import { useEffect, useRef } from "react";
 import { useDomains } from "../../hooks/useDomains";
 import { useRuns } from "../../hooks/useRuns";
 import { useCompare } from "../../hooks/useCompare";
+import { ApiClientError } from "../../api/client";
 import { useRun } from "../../context/RunContext";
 import { useToast } from "../../context/ToastContext";
 import { useCompareState } from "./useCompareState";
@@ -4347,6 +4393,7 @@ import { CompareLedger } from "../../components/signature/CompareLedger";
 import { DiscrepancyStack } from "./DiscrepancyStack";
 import { useKeyboardTriage } from "./useKeyboardTriage";
 import { sortFacts } from "./sort";
+import { buildLedgerCode } from "./ledgerCode";
 
 export function CompareScreen() {
   const domainsQuery = useDomains();
@@ -4356,6 +4403,7 @@ export function CompareScreen() {
   const { showToast } = useToast();
   const state = useCompareState();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (domainsQuery.data && !state.domain) {
@@ -4377,11 +4425,11 @@ export function CompareScreen() {
       state.setControlBarCollapsed(true);
       state.clearVerdictFilters();
       state.setSelectedFactId(result.verdicts[0]?.fact_id ?? null);
-    } catch {
+    } catch (err) {
       showToast({
         kind: "error",
-        message: compare.error?.message ?? "Compare failed",
-        detail: compare.error?.detail,
+        message: err instanceof ApiClientError ? err.message : "Compare failed",
+        detail: err instanceof ApiClientError ? err.detail : undefined,
       });
     }
   }
@@ -4418,12 +4466,22 @@ export function CompareScreen() {
 
   useEffect(() => {
     state.setHighlightedLocation(null);
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedFactId]);
 
   function handleLocationClick(location: string) {
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
     state.setHighlightedLocation(location);
-    setTimeout(() => state.setHighlightedLocation(null), 1600);
+    highlightTimeoutRef.current = setTimeout(() => {
+      state.setHighlightedLocation(null);
+      highlightTimeoutRef.current = null;
+    }, 1600);
   }
 
   return (
@@ -4488,15 +4546,10 @@ export function CompareScreen() {
                 <>
                   <CompareLedger
                     fact={selectedFact}
-                    code={{
-                      snippet: selectedFact.discrepancies[0]?.code_location ?? selectedFact.reasoning,
-                      startLine: 1,
-                      endLine: 1,
-                      qualifiedName: selectedFact.qualified_name,
-                      language: "python",
-                      filePath: runsQuery.data?.runs.find((r) => r.run_id === state.runId)?.file_path ?? "",
-                      factType: selectedFact.fact_type,
-                    }}
+                    code={buildLedgerCode(
+                      selectedFact,
+                      runsQuery.data?.runs.find((r) => r.run_id === state.runId)?.file_path ?? ""
+                    )}
                     highlightedLocation={state.highlightedLocation}
                   />
                   <DiscrepancyStack fact={selectedFact} onLocationClick={handleLocationClick} />
@@ -4513,21 +4566,23 @@ export function CompareScreen() {
 }
 ```
 
-Note on the `code.snippet` placeholder value above: `frontend.md`'s `CompareResponse` does not embed the full `code_facts[].evidence.code_snippet` on each verdict (only `code_location` strings inside discrepancies and the `qualified_name`/`fact_type`). A real backend integration will need either (a) the compare endpoint extended to include `evidence.code_snippet`/`start_line`/`end_line` per verdict, or (b) a follow-up fetch to the run's ingest artifact by `fact_id`. Document this as a known integration gap rather than inventing data: for now the Ledger's code column shows the best available text (`discrepancies[0].code_location` when present) — this is called out explicitly in Task 29's final verification pass, not hidden.
+`handleCompare`'s `catch (err)` reads the freshly-thrown `err` directly rather than the hook's `compare.error` — this matters. `compare.run(...)` dispatches its error into `useAsync`'s reducer state before re-throwing, but that dispatch only takes effect on React's *next* render; the `compare` object this render's `handleCompare` closure captured stays frozen at whatever it was when the closure was created, so `compare.error` read synchronously in the same `catch` block is always one render stale (`null` on the very first failure). Reading `err` — the value the `catch` clause actually receives — sidesteps the render-timing gap entirely. Apply the same fix everywhere else this codebase shows `<hook>.error?.message` inside a `catch` block right after `await <hook>.run(...)` (Task 25's `GitLabIngest`, Task 26's `AskScreen`) — each is written using this same corrected pattern in this plan already, and should not be reverted back to reading the hook's `.error` field.
 
-- [ ] **Step 4: Verify manually**
+`buildLedgerCode`'s fallback (Step 1 above) exists because `frontend.md`'s `CompareResponse` does not embed the full `code_facts[].evidence.code_snippet` on each verdict (only `code_location` strings inside discrepancies and the `qualified_name`/`fact_type`). A real backend integration will need either (a) the compare endpoint extended to include `evidence.code_snippet`/`start_line`/`end_line` per verdict, or (b) a follow-up fetch to the run's ingest artifact by `fact_id`. Document this as a known integration gap rather than inventing data: for now the Ledger's code column shows the best available text (`discrepancies[0].code_location` when present) — this is called out explicitly in Task 29's final verification pass, not hidden.
+
+- [ ] **Step 5: Verify manually**
 
 Run: `npm run dev`, run a compare (Task 22's flow). Expected: triage list appears on the left (380px at desktop width), sorted Misaligned → Partial → Unrelated → Aligned then by confidence descending; clicking a row loads the Ledger on the right with the verdict spine showing the correct glyph/colour/confidence; pressing `j`/`k` moves the triage selection; pressing `1` filters to Misaligned only and the Misaligned stat card shows active; pressing `0` clears filters; pressing `/` focuses the triage search box; typing in the search box and pressing `Escape` clears both search and filters.
 
-- [ ] **Step 5: Typecheck and lint**
+- [ ] **Step 6: Typecheck and lint**
 
 Run: `npx tsc --noEmit && npx eslint src/screens/Compare`
 Expected: no errors.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/screens/Compare/CompareScreen.tsx src/screens/Compare/DiscrepancyStack.tsx src/screens/Compare/useKeyboardTriage.ts
+git add src/screens/Compare/CompareScreen.tsx src/screens/Compare/DiscrepancyStack.tsx src/screens/Compare/useKeyboardTriage.ts src/screens/Compare/ledgerCode.ts
 git commit -m "feat: assemble Compare screen with triage list, ledger, discrepancies, and keyboard triage"
 ```
 
@@ -4572,6 +4627,7 @@ import { useUpload } from "../../hooks/useUpload";
 import { useToast } from "../../context/ToastContext";
 import { SelectField } from "../../components/primitives/SelectField";
 import { FileDrop } from "../../components/signature/FileDrop";
+import { ApiClientError } from "../../api/client";
 
 const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt"];
 
@@ -4594,18 +4650,15 @@ export function UploadPanel({ onUploaded }: UploadPanelProps) {
       const result = await upload.run(file, activeDomain);
       showToast({ kind: "success", message: `${result.filename} uploaded to ${result.domain}.` });
       onUploaded();
-    } catch {
-      const detail = upload.error?.detail;
+    } catch (err) {
+      const detail = err instanceof ApiClientError ? err.detail : undefined;
+      const message = err instanceof ApiClientError ? err.message : "Upload failed";
       const allowedDomains =
         Array.isArray(detail) && detail[0]?.allowed_domains ? (detail[0].allowed_domains as string[]) : null;
       if (allowedDomains) {
         setDomainError(`Unsupported domain. Allowed: ${allowedDomains.join(", ")}`);
       }
-      showToast({
-        kind: "error",
-        message: upload.error?.message ?? "Upload failed",
-        detail: upload.error?.detail,
-      });
+      showToast({ kind: "error", message, detail });
     }
   }
 
@@ -4802,6 +4855,7 @@ import { MetaBadge } from "../../components/primitives/MetaBadge";
 import { EvidenceBlock } from "../../components/signature/EvidenceBlock";
 import { JsonViewer } from "../../components/signature/JsonViewer";
 import { parseGitlabUrl } from "../../utils/parseGitlabUrl";
+import { ApiClientError } from "../../api/client";
 
 interface GitLabIngestProps {
   onIngested: () => void;
@@ -4820,8 +4874,12 @@ export function GitLabIngest({ onIngested }: GitLabIngestProps) {
     if (!parsed) return;
     try {
       await extract.run({ url, branch: parsed.branch, key_only: keyOnly });
-    } catch {
-      showToast({ kind: "error", message: extract.error?.message ?? "Extract failed", detail: extract.error?.detail });
+    } catch (err) {
+      showToast({
+        kind: "error",
+        message: err instanceof ApiClientError ? err.message : "Extract failed",
+        detail: err instanceof ApiClientError ? err.detail : undefined,
+      });
     }
   }
 
@@ -4831,8 +4889,12 @@ export function GitLabIngest({ onIngested }: GitLabIngestProps) {
       await ingest.run({ url, branch: parsed.branch, key_only: keyOnly });
       showToast({ kind: "success", message: `Ingested ${parsed.path}.` });
       onIngested();
-    } catch {
-      showToast({ kind: "error", message: ingest.error?.message ?? "Ingest failed", detail: ingest.error?.detail });
+    } catch (err) {
+      showToast({
+        kind: "error",
+        message: err instanceof ApiClientError ? err.message : "Ingest failed",
+        detail: err instanceof ApiClientError ? err.detail : undefined,
+      });
     }
   }
 
@@ -5058,6 +5120,7 @@ import { Button } from "../../components/primitives/Button";
 import { EmptyState } from "../../components/signature/EmptyState";
 import { Skeleton } from "../../components/signature/Skeleton";
 import { SourceCard } from "./SourceCard";
+import { ApiClientError } from "../../api/client";
 import type { PromptType, SearchProfile } from "../../types/domain";
 
 const PROMPT_TYPES: PromptType[] = [
@@ -5078,8 +5141,12 @@ export function AskScreen() {
   async function handleAsk() {
     try {
       await ask.run({ question, domain: activeDomain, prompt_type: promptType, search_profile: searchProfile });
-    } catch {
-      showToast({ kind: "error", message: ask.error?.message ?? "Question failed", detail: ask.error?.detail });
+    } catch (err) {
+      showToast({
+        kind: "error",
+        message: err instanceof ApiClientError ? err.message : "Question failed",
+        detail: err instanceof ApiClientError ? err.detail : undefined,
+      });
     }
   }
 
@@ -5242,7 +5309,7 @@ git commit -m "feat: add Ask screen and missing documents/query mock handler"
 - Modify: `src/screens/Compare/CompareScreen.tsx`, `src/App.tsx`
 
 **Interfaces:**
-- Consumes: `TriageList` (Task 20), `CompareLedger` (Task 19), `DiscrepancyStack` (Task 23), `sortFacts` (Task 22), `Button` (Task 11), `formatRelativeTime` (Task 24).
+- Consumes: `TriageList` (Task 20), `CompareLedger` (Task 19), `DiscrepancyStack`/`buildLedgerCode` (Task 23), `sortFacts` (Task 22), `Button` (Task 11), `formatRelativeTime` (Task 24).
 - Produces: `recordHistory`, `getHistory`, `clearHistory`, `exportEntryAsJson`, `exportEntryAsCsv`, `HistoryEntry` type — `recordHistory` is called from `CompareScreen` on every successful compare; everything else is consumed only by `HistoryScreen`.
 
 - [ ] **Step 1: History store**
@@ -5338,6 +5405,7 @@ import { TriageList } from "../../components/signature/TriageList";
 import { CompareLedger } from "../../components/signature/CompareLedger";
 import { DiscrepancyStack } from "../Compare/DiscrepancyStack";
 import { sortFacts } from "../Compare/sort";
+import { buildLedgerCode } from "../Compare/ledgerCode";
 import { formatRelativeTime } from "../../utils/formatRelativeTime";
 
 export function HistoryScreen() {
@@ -5435,18 +5503,7 @@ export function HistoryScreen() {
                 </div>
                 {selectedFact ? (
                   <>
-                    <CompareLedger
-                      fact={selectedFact}
-                      code={{
-                        snippet: selectedFact.discrepancies[0]?.code_location ?? selectedFact.reasoning,
-                        startLine: 1,
-                        endLine: 1,
-                        qualifiedName: selectedFact.qualified_name,
-                        language: "python",
-                        filePath: "",
-                        factType: selectedFact.fact_type,
-                      }}
-                    />
+                    <CompareLedger fact={selectedFact} code={buildLedgerCode(selectedFact, "")} />
                     <DiscrepancyStack fact={selectedFact} onLocationClick={() => {}} />
                   </>
                 ) : (
@@ -5574,6 +5631,12 @@ export function SettingsScreen() {
   const [saved, setSaved] = useState(false);
 
   function commitBaseUrl() {
+    // `getApiBaseUrl()` only falls back to the env default on a missing localStorage key
+    // (`??`, not a truthiness check) — persisting an empty string here would make every
+    // future request resolve to a relative path against the frontend's own origin, silently
+    // breaking the whole app until the user retypes a URL. Guard the same way `commitTimeout`
+    // already guards against an invalid number: no-op and keep the last valid persisted value.
+    if (baseUrl.trim().length === 0) return;
     setApiBaseUrl(baseUrl);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
