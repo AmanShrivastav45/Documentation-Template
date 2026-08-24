@@ -15,6 +15,7 @@ export function SettingsScreen() {
   const [saved, setSaved] = useState(false);
 
   function commitBaseUrl() {
+    if (baseUrl.trim().length === 0) return;
     setApiBaseUrl(baseUrl);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
