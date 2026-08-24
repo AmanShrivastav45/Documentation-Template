@@ -51,7 +51,7 @@ export const simpleHandlers = [
       return HttpResponse.json(
         {
           detail:
-            "Cannot parse GitLab URL. Expected: https://gitlab.nomura.com/group/repo/-/blob/branch/path/to/file",
+            "Cannot parse GitLab URL. Expected: https://gitlab.example.com/group/repo/-/blob/branch/path/to/file",
         },
         { status: 400 }
       );

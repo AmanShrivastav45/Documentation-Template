@@ -4,7 +4,7 @@ export const extractFixture: ExtractResponse = {
   file_path: "src/trade_handler.py",
   language: "python",
   metadata: {
-    url: "https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py",
+    url: "https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py",
     branch: "master",
     requested_at: "2026-08-23T09:20:10.000Z",
   },

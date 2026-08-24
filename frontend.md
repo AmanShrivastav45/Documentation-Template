@@ -415,7 +415,7 @@ const data = await res.json();
 
 ```json
 {
-  "url": "https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py",
+  "url": "https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py",
   "branch": null,
   "key_only": false
 }
@@ -429,7 +429,7 @@ const data = await res.json();
   "file_path": "src/trade_handler.py",
   "language": "python",
   "metadata": {
-    "url": "https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py",
+    "url": "https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py",
     "branch": "master",
     "requested_at": "2026-08-23T09:20:10.000Z"
   },
@@ -467,7 +467,7 @@ const data = await res.json();
 
 ```json
 {
-  "detail": "Cannot parse GitLab URL ... Expected: https://gitlab.nomura.com/group/repo/-/blob/branch/path/to/file"
+  "detail": "Cannot parse GitLab URL ... Expected: https://gitlab.example.com/group/repo/-/blob/branch/path/to/file"
 }
 
 ```
@@ -518,7 +518,7 @@ const data = await res.json();
 
 ```json
 {
-  "url": "https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py",
+  "url": "https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py",
   "branch": null,
   "key_only": false
 }

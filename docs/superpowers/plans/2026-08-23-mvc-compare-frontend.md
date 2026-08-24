@@ -1187,7 +1187,7 @@ export const extractFixture: ExtractResponse = {
   file_path: "src/trade_handler.py",
   language: "python",
   metadata: {
-    url: "https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py",
+    url: "https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py",
     branch: "master",
     requested_at: "2026-08-23T09:20:10.000Z",
   },
@@ -1361,7 +1361,7 @@ export const simpleHandlers = [
       return HttpResponse.json(
         {
           detail:
-            "Cannot parse GitLab URL. Expected: https://gitlab.nomura.com/group/repo/-/blob/branch/path/to/file",
+            "Cannot parse GitLab URL. Expected: https://gitlab.example.com/group/repo/-/blob/branch/path/to/file",
         },
         { status: 400 }
       );
@@ -4821,7 +4821,7 @@ git commit -m "feat: add Sources screen document upload and document list"
 
 - [ ] **Step 1: Client-side GitLab URL parser**
 
-Create `src/utils/parseGitlabUrl.ts`, matching the format documented in `frontend.md` (`https://gitlab.nomura.com/group/repo/-/blob/branch/path/to/file`):
+Create `src/utils/parseGitlabUrl.ts`, matching the format documented in `frontend.md` (`https://gitlab.example.com/group/repo/-/blob/branch/path/to/file`):
 ```typescript
 export interface ParsedGitlabUrl {
   group: string;
@@ -4906,7 +4906,7 @@ export function GitLabIngest({ onIngested }: GitLabIngestProps) {
         mono
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py"
+        placeholder="https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py"
         error={url.length > 0 && !parsed ? "Cannot parse GitLab URL. Expected: .../group/repo/-/blob/branch/path" : undefined}
       />
       {parsed && (
@@ -5053,7 +5053,7 @@ export function SourcesScreen() {
 
 - [ ] **Step 5: Verify manually**
 
-Run: `npm run dev`, open `/sources`. Paste `https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py` into the GitLab URL field — expect the parsed preview line (`group/repo · master · src/trade_handler.py`) to appear immediately, client-side, with no network request. Click **Preview extract** — expect the 2-chunk fixture to render with `compute_margin` tagged `KEY`. Click **Ingest** — expect a success toast and the runs list to grow by one entry. Paste a malformed URL (e.g. `https://example.com/not-gitlab`) — expect the inline parse error and both buttons disabled, with no request fired.
+Run: `npm run dev`, open `/sources`. Paste `https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py` into the GitLab URL field — expect the parsed preview line (`group/repo · master · src/trade_handler.py`) to appear immediately, client-side, with no network request. Click **Preview extract** — expect the 2-chunk fixture to render with `compute_margin` tagged `KEY`. Click **Ingest** — expect a success toast and the runs list to grow by one entry. Paste a malformed URL (e.g. `https://example.com/not-gitlab`) — expect the inline parse error and both buttons disabled, with no request fired.
 
 - [ ] **Step 6: Typecheck and lint**
 

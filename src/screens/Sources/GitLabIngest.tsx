@@ -72,7 +72,7 @@ export function GitLabIngest({ onIngested }: GitLabIngestProps) {
         mono
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="https://gitlab.nomura.com/group/repo/-/blob/master/src/trade_handler.py"
+        placeholder="https://gitlab.example.com/group/repo/-/blob/master/src/trade_handler.py"
         error={url.length > 0 && !parsed ? "Cannot parse GitLab URL. Expected: .../group/repo/-/blob/branch/path" : undefined}
       />
       {parsed && (
