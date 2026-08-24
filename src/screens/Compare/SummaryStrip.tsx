@@ -26,7 +26,7 @@ export function SummaryStrip({ summary, activeFilters, onToggleFilter, onClearFi
   };
 
   return (
-    <div className="flex gap-md p-lg overflow-x-auto">
+    <div className="flex gap-md p-lg overflow-x-auto max-md:snap-x max-md:snap-mandatory">
       {CARDS.map((c) => (
         <StatCard
           key={c.key}

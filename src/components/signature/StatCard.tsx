@@ -33,7 +33,7 @@ export function StatCard({ statKey, label, count, active, onClick }: StatCardPro
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex-1 h-[88px] flex flex-col justify-center gap-xxs px-lg rounded-lg border border-hairline text-left transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+      className={`flex-1 max-md:shrink-0 max-md:w-36 max-md:snap-start h-[88px] flex flex-col justify-center gap-xxs px-lg rounded-lg border border-hairline text-left transition-colors duration-fast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
         active ? `${tint} border-b-2 ${ACTIVE_BORDER[statKey]}` : "bg-surface-raised"
       }`}
     >

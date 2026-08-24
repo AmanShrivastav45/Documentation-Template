@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { CodeRun, SearchProfile, Verdict } from "../../types/domain";
 import { SelectField } from "../../components/primitives/SelectField";
 import { Toggle } from "../../components/primitives/Toggle";
@@ -31,27 +32,13 @@ interface ControlBarProps {
   onEdit: () => void;
 }
 
-export function ControlBar(props: ControlBarProps) {
+function ControlBarFields(props: ControlBarProps) {
   const selectedRun = props.runs.find((r) => r.run_id === props.runId);
   const keyCount = selectedRun?.key_calculation_count ?? 0;
   const totalCount = selectedRun?.facts_total ?? 0;
 
-  if (props.collapsed) {
-    return (
-      <div className="h-10 flex items-center gap-sm px-lg bg-surface border-b border-hairline">
-        <span className="font-mono font-mono-noliga text-mono-id text-ink">
-          {props.domain} · {props.runId} · {props.searchProfile}
-          {props.keyOnly ? " · key only" : ""}
-        </span>
-        <Button variant="quiet" onClick={props.onEdit}>
-          Edit
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-wrap items-end gap-md p-lg bg-surface border-b border-hairline">
+    <>
       <SelectField
         id="compare-domain"
         label="Domain"
@@ -102,10 +89,58 @@ export function ControlBar(props: ControlBarProps) {
         loading={props.comparing}
         loadingLabel={`Comparing ${totalCount || "…"} facts…`}
         disabled={!props.domain || !props.runId}
-        className="ml-auto"
+        className="md:ml-auto"
       >
         Compare
       </Button>
+    </>
+  );
+}
+
+export function ControlBar(props: ControlBarProps) {
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+
+  if (props.collapsed) {
+    return (
+      <div className="h-10 flex items-center gap-sm px-lg bg-surface border-b border-hairline">
+        <span className="font-mono font-mono-noliga text-mono-id text-ink">
+          {props.domain} · {props.runId} · {props.searchProfile}
+          {props.keyOnly ? " · key only" : ""}
+        </span>
+        <Button variant="quiet" onClick={props.onEdit}>
+          Edit
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-surface border-b border-hairline">
+      <div className="hidden md:flex flex-wrap items-end gap-md p-lg">
+        <ControlBarFields {...props} />
+      </div>
+      <div className="md:hidden p-lg">
+        <Button variant="outline" onClick={() => setMobileSheetOpen(true)} className="w-full">
+          Set up compare
+        </Button>
+      </div>
+      {mobileSheetOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" role="presentation" onClick={() => setMobileSheetOpen(false)}>
+          <div className="absolute inset-0 bg-overlay" />
+          <div
+            className="absolute inset-x-0 bottom-0 bg-surface-raised rounded-t-lg shadow-pop p-lg flex flex-col gap-md max-h-[80vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ControlBarFields
+              {...props}
+              onCompare={() => {
+                props.onCompare();
+                setMobileSheetOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

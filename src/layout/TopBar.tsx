@@ -10,7 +10,7 @@ const CYCLE: Record<string, "light" | "dark" | "system"> = {
   dark: "system",
 };
 
-export function TopBar() {
+export function TopBar({ onOpenShortcuts }: { onOpenShortcuts: () => void }) {
   const { activeRun } = useRun();
   const { mode, setMode } = useTheme();
 
@@ -28,7 +28,9 @@ export function TopBar() {
         <IconButton aria-label={`Theme: ${mode}. Click to change.`} onClick={() => setMode(CYCLE[mode])}>
           {mode === "dark" ? "☾" : mode === "light" ? "☀" : "◐"}
         </IconButton>
-        <IconButton aria-label="Keyboard shortcuts">?</IconButton>
+        <IconButton aria-label="Keyboard shortcuts" onClick={onOpenShortcuts}>
+          ?
+        </IconButton>
       </div>
     </header>
   );
