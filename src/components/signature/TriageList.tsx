@@ -54,7 +54,7 @@ export function TriageList({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Filter by fact_id or qualified_name"
           aria-label="Filter triage list"
-          className="flex-1 min-w-0 bg-transparent text-body-sm placeholder:text-faint focus:outline-none"
+          className="flex-1 min-w-0 bg-transparent text-body-sm placeholder:text-faint focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         />
         <span className="font-mono font-mono-noliga text-mono-id text-stone">{facts.length}</span>
       </div>
@@ -64,7 +64,7 @@ export function TriageList({
         aria-activedescendant={selectedFactId ? `triage-row-${selectedFactId}` : undefined}
         tabIndex={0}
         onKeyDown={onListKeyDown}
-        className="flex-1 overflow-auto focus:outline-none"
+        className="flex-1 overflow-auto focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {facts.map((fact) => (
           <TriageRow

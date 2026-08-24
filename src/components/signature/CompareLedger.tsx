@@ -37,7 +37,7 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
       className="flex flex-col min-h-0"
     >
       <div className="px-lg pt-lg pb-md border-b border-hairline">
-        <h2 className="text-title-lg text-ink font-mono font-mono-noliga font-medium truncate">
+        <h2 className="text-title-lg text-ink font-mono font-mono-noliga font-medium break-words">
           {fact.qualified_name}
         </h2>
       </div>
