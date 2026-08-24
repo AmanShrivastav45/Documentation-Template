@@ -29,9 +29,15 @@ export function GitLabIngest({ onIngested }: GitLabIngestProps) {
     try {
       await extract.run({ url, branch: parsed.branch, key_only: keyOnly });
     } catch (err) {
+      const message =
+        err instanceof ApiClientError && err.status === 401
+          ? "The backend needs GITLAB_TOKEN configured. Contact an admin."
+          : err instanceof ApiClientError
+            ? err.message
+            : "Extract failed";
       showToast({
         kind: "error",
-        message: err instanceof ApiClientError ? err.message : "Extract failed",
+        message,
         detail: err instanceof ApiClientError ? err.detail : undefined,
       });
     }
@@ -44,9 +50,15 @@ export function GitLabIngest({ onIngested }: GitLabIngestProps) {
       showToast({ kind: "success", message: `Ingested ${parsed.path}.` });
       onIngested();
     } catch (err) {
+      const message =
+        err instanceof ApiClientError && err.status === 401
+          ? "The backend needs GITLAB_TOKEN configured. Contact an admin."
+          : err instanceof ApiClientError
+            ? err.message
+            : "Ingest failed";
       showToast({
         kind: "error",
-        message: err instanceof ApiClientError ? err.message : "Ingest failed",
+        message,
         detail: err instanceof ApiClientError ? err.detail : undefined,
       });
     }

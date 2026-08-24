@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getHistory, clearHistory, exportEntryAsJson, exportEntryAsCsv, type HistoryEntry } from "../../history/store";
 import { Button } from "../../components/primitives/Button";
 import { EmptyState } from "../../components/signature/EmptyState";
@@ -14,6 +14,8 @@ export function HistoryScreen() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(entries[0]?.id ?? null);
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
+  const [highlightedLocation, setHighlightedLocation] = useState<string | null>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedEntry = entries.find((e) => e.id === selectedEntryId) ?? null;
   const visibleFacts = selectedEntry
@@ -27,6 +29,26 @@ export function HistoryScreen() {
       )
     : [];
   const selectedFact = selectedEntry?.response.verdicts.find((v) => v.fact_id === selectedFactId) ?? null;
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- highlight must reset whenever the selected fact changes
+    setHighlightedLocation(null);
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+    }
+  }, [selectedFactId]);
+
+  function handleLocationClick(location: string) {
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+    setHighlightedLocation(location);
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedLocation(null);
+      highlightTimeoutRef.current = null;
+    }, 1600);
+  }
 
   function handleClear() {
     if (!window.confirm("Clear all local compare history? This cannot be undone.")) return;
@@ -104,8 +126,12 @@ export function HistoryScreen() {
                 </div>
                 {selectedFact ? (
                   <>
-                    <CompareLedger fact={selectedFact} code={buildLedgerCode(selectedFact, "")} />
-                    <DiscrepancyStack fact={selectedFact} onLocationClick={() => {}} />
+                    <CompareLedger
+                      fact={selectedFact}
+                      code={buildLedgerCode(selectedFact, "")}
+                      highlightedLocation={highlightedLocation}
+                    />
+                    <DiscrepancyStack fact={selectedFact} onLocationClick={handleLocationClick} />
                   </>
                 ) : (
                   <EmptyState title="No fact selected" description="Choose a row from the triage list." />

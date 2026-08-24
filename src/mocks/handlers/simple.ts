@@ -46,13 +46,21 @@ export const simpleHandlers = [
   http.get(`${BASE}/api/v1/code/runs`, () => HttpResponse.json({ runs: codeRunsFixture })),
   http.post(`${BASE}/api/v1/code/extract`, async ({ request }) => {
     const body = (await request.json()) as { url: string };
-    if (!/^https:\/\/.+\/-\/blob\/.+/.test(body.url)) {
+    const match = /^https:\/\/.+\/-\/blob\/[^/]+\/(.+)$/.exec(body.url);
+    if (!match) {
       return HttpResponse.json(
         {
           detail:
             "Cannot parse GitLab URL. Expected: https://gitlab.nomura.com/group/repo/-/blob/branch/path/to/file",
         },
         { status: 400 }
+      );
+    }
+    const path = match[1];
+    if (path === "src/no_token.py") {
+      return HttpResponse.json(
+        { detail: "GITLAB_TOKEN is not configured. Set the GITLAB_TOKEN environment variable." },
+        { status: 401 }
       );
     }
     return HttpResponse.json(extractFixture);

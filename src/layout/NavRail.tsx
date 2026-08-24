@@ -17,7 +17,7 @@ export function NavRail() {
           to={item.to}
           end={item.to === "/"}
           className={({ isActive }) =>
-            `h-14 flex flex-col group-hover:flex-row group-focus-within:flex-row items-center justify-center group-hover:justify-start group-focus-within:justify-start gap-xxs group-hover:gap-sm group-focus-within:gap-sm group-hover:px-lg group-focus-within:px-lg border-l-2 max-md:border-l-0 max-md:border-t-2 ${
+            `h-14 flex flex-col group-hover:flex-row group-focus-within:flex-row items-center justify-center group-hover:justify-start group-focus-within:justify-start gap-xxs group-hover:gap-sm group-focus-within:gap-sm group-hover:px-lg group-focus-within:px-lg border-l-2 max-md:border-l-0 max-md:border-t-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
               isActive ? "border-accent text-ink" : "border-transparent text-mute"
             } hover:text-ink`
           }

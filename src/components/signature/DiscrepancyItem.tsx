@@ -29,7 +29,7 @@ export function DiscrepancyItem({ discrepancy, verdict, onLocationClick }: Discr
             <button
               type="button"
               onClick={() => onLocationClick?.(discrepancy.code_location!)}
-              className="w-full text-left font-mono font-mono-noliga text-mono-code-sm bg-surface-sunken rounded-md px-md py-sm hover:bg-surface-sunken/80"
+              className="w-full text-left font-mono font-mono-noliga text-mono-code-sm bg-surface-sunken rounded-md px-md py-sm hover:bg-surface-sunken/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {discrepancy.code_location}
             </button>

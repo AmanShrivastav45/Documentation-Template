@@ -2,10 +2,11 @@ import { useEffect, useRef } from "react";
 import { CodeBlock } from "./CodeBlock";
 import { VerdictSpine } from "./VerdictSpine";
 import { MetaBadge } from "../primitives/MetaBadge";
+import { verdictColorClass } from "../primitives/verdict";
 import type { FactVerdict } from "../../types/domain";
 
 export interface LedgerCode {
-  snippet: string;
+  snippet: string | null;
   startLine: number;
   endLine: number;
   qualifiedName: string;
@@ -67,21 +68,25 @@ export function CompareLedger({ fact, code, highlightedLocation }: CompareLedger
         <div
           ref={codeColumnRef}
           className={`flex-1 min-w-0 min-[900px]:min-w-[340px] min-[900px]:border-l border-hairline-strong flex flex-col min-h-0 transition-colors duration-base ${
-            highlightedLocation ? "bg-code-evidence-bg" : ""
+            highlightedLocation ? verdictColorClass(fact.verdict).tint : ""
           }`}
         >
           <div className="h-8 shrink-0 sticky top-0 bg-surface flex items-center px-md text-mono-eyebrow uppercase tracking-wide text-stone font-mono font-mono-noliga">
             Code
           </div>
           <div className="flex-1 overflow-auto p-lg flex flex-col gap-md">
-            <CodeBlock
-              code={code.snippet}
-              startLine={code.startLine}
-              qualifiedName={code.qualifiedName}
-              language={code.language}
-              evidenceLines={[code.startLine, code.endLine]}
-              evidenceVerdict={fact.verdict}
-            />
+            {code.snippet ? (
+              <CodeBlock
+                code={code.snippet}
+                startLine={code.startLine}
+                qualifiedName={code.qualifiedName}
+                language={code.language}
+                evidenceLines={[code.startLine, code.endLine]}
+                evidenceVerdict={fact.verdict}
+              />
+            ) : (
+              <p className="text-body-md text-mute">No code evidence available for this fact.</p>
+            )}
             <p className="text-mono-id font-mono font-mono-noliga text-stone flex items-center gap-sm">
               <span>
                 {code.filePath} · {code.startLine}–{code.endLine}

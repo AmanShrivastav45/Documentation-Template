@@ -3,7 +3,7 @@ import type { LedgerCode } from "../../components/signature/CompareLedger";
 
 export function buildLedgerCode(fact: FactVerdict, filePath: string): LedgerCode {
   return {
-    snippet: fact.discrepancies[0]?.code_location ?? fact.reasoning,
+    snippet: fact.discrepancies[0]?.code_location ?? null,
     startLine: 1,
     endLine: 1,
     qualifiedName: fact.qualified_name,
