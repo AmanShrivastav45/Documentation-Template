@@ -1,7 +1,5 @@
 import { normalizeApiError, type NormalizedApiError } from "./errors";
-
-const BASE_URL = import.meta.env.VITE_MVC_API_BASE_URL as string;
-const TIMEOUT_MS = Number(import.meta.env.VITE_MVC_API_TIMEOUT_MS ?? 60000);
+import { getApiBaseUrl, getApiTimeoutMs } from "./config";
 
 export class ApiClientError extends Error {
   status?: number;
@@ -14,11 +12,13 @@ export class ApiClientError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const baseUrl = getApiBaseUrl();
+  const timeoutMs = getApiTimeoutMs();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    const res = await fetch(`${baseUrl}${path}`, {
       ...init,
       signal: controller.signal,
       headers:
@@ -45,7 +45,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new ApiClientError({
         status: undefined,
-        message: `Request timed out after ${TIMEOUT_MS}ms`,
+        message: `Request timed out after ${timeoutMs}ms`,
       });
     }
     throw new ApiClientError(normalizeApiError(err));

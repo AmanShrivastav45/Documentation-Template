@@ -3,19 +3,11 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { RunProvider } from "./context/RunContext";
 import { ToastProvider } from "./context/ToastContext";
 import { AppLayout } from "./layout/AppLayout";
-import { EmptyState } from "./components/signature/EmptyState";
 import { CompareScreen } from "./screens/Compare/CompareScreen";
 import { SourcesScreen } from "./screens/Sources/SourcesScreen";
 import { AskScreen } from "./screens/Ask/AskScreen";
 import { HistoryScreen } from "./screens/History/HistoryScreen";
-
-function StubScreen({ name }: { name: string }) {
-  return (
-    <div className="p-xl">
-      <EmptyState title={`${name} screen`} description={`${name} is built in a later task.`} />
-    </div>
-  );
-}
+import { SettingsScreen } from "./screens/Settings/SettingsScreen";
 
 export default function App() {
   return (
@@ -29,7 +21,7 @@ export default function App() {
                 <Route path="sources" element={<SourcesScreen />} />
                 <Route path="ask" element={<AskScreen />} />
                 <Route path="history" element={<HistoryScreen />} />
-                <Route path="settings" element={<StubScreen name="Settings" />} />
+                <Route path="settings" element={<SettingsScreen />} />
               </Route>
             </Routes>
           </BrowserRouter>
