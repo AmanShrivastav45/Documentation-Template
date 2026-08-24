@@ -1,10 +1,5 @@
 import type { CompareResponse, FactVerdict, Verdict } from "../../types/domain";
 
-const LONG_SNIPPET = Array.from(
-  { length: 200 },
-  (_, i) => `    step_${i} = intermediate_${i} * factor_${i}  # line ${i + 1}`
-).join("\n");
-
 const sixDiscrepancyFact: FactVerdict = {
   fact_id: "CF-0007",
   qualified_name: "RiskEngine.calculate_rwa",
@@ -18,7 +13,14 @@ const sixDiscrepancyFact: FactVerdict = {
       type: "missing_constraint",
       description: "Code does not apply the regulatory minimum floor of 0.15.",
       rule_text: "Risk weight floor shall be 15% of gross exposure.",
-      code_location: "calculate_rwa: return risk_weight * exposure",
+      code_location: [
+        "def calculate_rwa(exposure: float, threshold: float) -> float:",
+        "    haircut = 0.08",
+        "    risk_weight = exposure * haircut",
+        "    if exposure > threshold:",
+        "        flagged = True",
+        "    return risk_weight * exposure",
+      ].join("\n"),
     },
     {
       type: "wrong_operator",
@@ -83,7 +85,14 @@ const longSnippetFact: FactVerdict = {
       type: "missing_constraint",
       description: "Intermediate scaling steps 40-60 have no documented basis.",
       rule_text: "All intermediate risk scalars must derive from Section 4.2.",
-      code_location: "compute_stressed_var: step_40..step_60",
+      code_location: [
+        "def compute_stressed_var(portfolio, stress_scenario):",
+        ...Array.from(
+          { length: 28 },
+          (_, i) => `    step_${i} = intermediate_${i} * factor_${i}  # stress scaling step ${i + 1}`
+        ),
+        "    return aggregate(step_0, step_27)",
+      ].join("\n"),
     },
   ],
   rule_reference: {
@@ -128,7 +137,14 @@ function makeFact(index: number, verdict: Verdict): FactVerdict {
               type: "wrong_value",
               description: `metric_${index} constant differs from policy value.`,
               rule_text: `Policy fixture text for metric_${index}.`,
-              code_location: `metric_${index}: constant = 0`,
+              code_location: [
+                `def metric_${index}(exposure: float, threshold: float) -> float:`,
+                `    constant = 0  # should match policy value`,
+                `    weighted = exposure * constant`,
+                `    if weighted > threshold:`,
+                `        return weighted`,
+                `    return 0.0`,
+              ].join("\n"),
             },
           ],
     rule_reference:
@@ -178,5 +194,3 @@ export const compareFixture: CompareResponse = {
   verdicts: allVerdicts,
   artifact_path: "C:/data/code/verdicts/20260823_094510_market_risk_engine_verdicts.json",
 };
-
-export const longSnippetSource = LONG_SNIPPET;

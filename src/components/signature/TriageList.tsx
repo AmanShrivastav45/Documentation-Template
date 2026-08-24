@@ -45,7 +45,7 @@ export function TriageList({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full min-[1600px]:w-[420px] min-[1280px]:w-[380px] min-[1024px]:w-[320px] shrink-0 border-r border-hairline">
+    <div className="flex flex-col h-full min-h-0 w-full min-[1024px]:w-[320px] shrink-0 border-r border-hairline">
       <div className="h-10 shrink-0 sticky top-0 bg-surface flex items-center gap-sm px-md border-b border-hairline">
         <input
           ref={inputRef}

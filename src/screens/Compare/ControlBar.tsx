@@ -116,7 +116,7 @@ export function ControlBar(props: ControlBarProps) {
 
   return (
     <div className="bg-surface border-b border-hairline">
-      <div className="hidden md:flex flex-wrap items-end gap-md p-lg">
+      <div className="hidden md:flex flex-wrap items-center gap-md p-lg">
         <ControlBarFields {...props} />
       </div>
       <div className="md:hidden p-lg">
